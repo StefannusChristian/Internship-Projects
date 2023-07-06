@@ -39,7 +39,7 @@ class KYC:
     #########################################################
 
     def __init__(self):
-        self.face_not_found_error_msg = "Cannot Detect Faces For! Please Upload Another Image With A Clear Face!"
+        self.face_not_found_error_msg = "Face Not Detected! Please Upload Another Image With A Clear Face!"
         self.empty_image_msg = "Please Upload An Image!"
         self.empty_image_1_msg = "Please Upload Image 1!"
         self.empty_image_2_msg = "Please Upload Image 2!"
@@ -282,6 +282,7 @@ class KYC:
         # Threshold For NIK
         th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_TRUNC)
         result = pytesseract.image_to_string((threshed), lang="ind")
+        result = result.replace('?','7')
         st.write(result)
 
         regex_patterns = {
