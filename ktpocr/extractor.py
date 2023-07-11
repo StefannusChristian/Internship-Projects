@@ -11,7 +11,7 @@ from form import KTPInformation
 from test import Test
 
 class KTPOCR():
-    def __init__(self, file_path):
+    def __init__(self):
         self.pytesseract_path = r"C:\Users\chris\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
         self.image = cv2.imread(file_path)
         self.original_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
@@ -32,6 +32,7 @@ class KTPOCR():
         self.regex_patterns = regex_patterns
         self.image_name_for_test = self.get_ktp_image_name(True)
         self.tester = Test(self.image_name_for_test)
+        self.ocr_threshold = st.slider(label='OCR Threshold', min_value=0.0, max_value=1.0, step=0.1, value=0.7)
 
     def process(self, information: str):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
@@ -297,9 +298,18 @@ class KTPOCR():
         df['Check'] = np.where(df['Value'] == df['Should Return'], '✅', '❌')
         return df
 
+    def verify_ocr(self, df: pd.DataFrame):
+        # Count the number of ✅ and ❌
+        check_counts = df['Check'].value_counts()
+        num_correct = check_counts.get('✅', 0)
+        return True if num_correct >= 13 else False
+
     def run(self):
         st.header(self.image_name)
         st.image(self.original_image, caption=self.image_name,use_column_width=True)
         for information in self.informations: self.master_process(information)
         df = self.make_dataframe()
+        is_verify = self.verify_ocr(df)
         st.dataframe(df,use_container_width=True,height=700)
+        if is_verify: st.success("VERIFIED!")
+        else: st.error("NOT VERIFIED!")
