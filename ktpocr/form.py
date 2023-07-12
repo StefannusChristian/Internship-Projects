@@ -1,4 +1,4 @@
-class KTPInformation(object):
+class KTPInformation:
     def __init__(self):
         self.provinsi = None
         self.kota_atau_kabupaten = None

@@ -11,7 +11,7 @@ class Test:
                 "tanggal_lahir": "08-11-2001",
                 "jenis_kelamin": "LAKI-LAKI",
                 "golongan_darah": "A",
-                "alamat": "JL. JEMBATAN ITEM",
+                "alamat": "JL JEMBATAN ITEM",
                 "rt": "006",
                 "rw": "007",
                 "kelurahan_atau_desa": "PEKOJAN",
@@ -31,7 +31,7 @@ class Test:
                 "tanggal_lahir":"18-04-1987",
                 "jenis_kelamin": "LAKI-LAKI",
                 "golongan_darah": "-",
-                "alamat": "JL. AMIR MAHMUD GG. SIRNAGALIH NO. 62",
+                "alamat": "JL AMIR MAHMUD GGSIRNAGALIH NO 62",
                 "rt": "005",
                 "rw": "006",
                 "kelurahan_atau_desa": "CIBABAT",
@@ -142,6 +142,26 @@ class Test:
                 "kewarganegaraan": "WNI",
                 "berlaku_hingga":"SEUMUR HIDUP"
             },
+            "sulistyono":{
+                "provinsi":"JAWA TIMUR",
+                "kota_atau_kabupaten": "KABUPATEN KEDIRI",
+                "nik":"3506042602660001",
+                "nama":"SULISTYONO",
+                "tempat_lahir": "KEDIRI",
+                "tanggal_lahir":"26-02-1966",
+                "jenis_kelamin": "LAKI-LAKI",
+                "golongan_darah": "-",
+                "alamat": "JL. RAYA - DSN PURWORKERTO",
+                "rt": "002",
+                "rw": "003",
+                "kelurahan_atau_desa": "PURWOKERTO",
+                "kecamatan": "NGADILUWIH",
+                "agama": "ISLAM",
+                "status_perkawinan": "KAWIN",
+                "pekerjaan": "GURU",
+                "kewarganegaraan": "WNI",
+                "berlaku_hingga":"26-02-2017"
+            },
         }
 
     def get_test_values(self, dictionary: dict): return dictionary.values()
@@ -154,3 +174,4 @@ class Test:
         elif self.ktp_name == "widiarso": return self.get_test_values(self.test_dict['widiarso'])
         elif self.ktp_name == "ren": return self.get_test_values(self.test_dict['ren'])
         elif self.ktp_name == "victor": return self.get_test_values(self.test_dict['victor'])
+        elif self.ktp_name == "sulistyono": return self.get_test_values(self.test_dict['sulistyono'])
