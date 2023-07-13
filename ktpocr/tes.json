@@ -1,0 +1,51 @@
+{
+    "Data": {
+        "Stores": [
+            {
+                "nama_toko": "toko",
+                "rating_toko": 5,
+                "pesanan_proses": 10,
+                "link_toko": "padspads",
+                "kota_toko": "kota",
+                "products": [
+                    {
+                        "product-name": "product_name",
+                        "product-price": "product_price",
+                        "product-sold": "product_sold",
+                        "product-rate": "product_rate",
+                        "product-category": "product_category",
+                        "product-review": "product_review",
+                        "product-link": "product_link"
+                    },
+                    {
+                        "product-name": "product_name",
+                        "product-price": "product_price",
+                        "product-sold": "product_sold",
+                        "product-rate": "product_rate",
+                        "product-category": "product_category",
+                        "product-review": "product_review",
+                        "product-link": "product_link"
+                    },
+                    {
+                        "product-name": "product_name",
+                        "product-price": "product_price",
+                        "product-sold": "product_sold",
+                        "product-rate": "product_rate",
+                        "product-category": "product_category",
+                        "product-review": "product_review",
+                        "product-link": "product_link"
+                    },
+                    {
+                        "product-name": "product_name",
+                        "product-price": "product_price",
+                        "product-sold": "product_sold",
+                        "product-rate": "product_rate",
+                        "product-category": "product_category",
+                        "product-review": "product_review",
+                        "product-link": "product_link"
+                    }
+                ]
+            }
+        ]
+    }
+}

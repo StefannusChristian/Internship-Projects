@@ -263,57 +263,57 @@ class KYC:
             with col2:
                 if (image2 is None): self.show_warning(self.empty_image_2_msg)
 
-    def extract_text_from_ktp(self, ktp_file):
-        if ktp_file is not None:
-            ktp_table = self.extract_text_from_indonesian_ktp_as_pandas_dataframe(ktp_file)
-            column1, column2 = st.columns(2)
-            with column1:
-                st.table(ktp_table)
-            with column2:
-                st.image(ktp_file, width=700, caption="User KTP", use_column_width=False)
-        else: self.show_warning(self.empty_ktp_file)
+    # def extract_text_from_ktp(self, ktp_file):
+    #     if ktp_file is not None:
+    #         ktp_table = self.extract_text_from_indonesian_ktp_as_pandas_dataframe(ktp_file)
+    #         column1, column2 = st.columns(2)
+    #         with column1:
+    #             st.table(ktp_table)
+    #         with column2:
+    #             st.image(ktp_file, width=700, caption="User KTP", use_column_width=False)
+    #     else: self.show_warning(self.empty_ktp_file)
 
-    def extract_text_from_indonesian_ktp_as_pandas_dataframe(self, ktp_file):
-        # Read Img
-        image_file = self.base_ktp_image_local_path + ktp_file.name
-        img = cv2.imread(image_file)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # def extract_text_from_indonesian_ktp_as_pandas_dataframe(self, ktp_file):
+    #     # Read Img
+    #     image_file = self.base_ktp_image_local_path + ktp_file.name
+    #     img = cv2.imread(image_file)
+    #     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        # Threshold For NIK
-        th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_TRUNC)
-        result = pytesseract.image_to_string((threshed), lang="ind")
-        result = result.replace('?','7')
-        st.write(result)
+    #     # Threshold For NIK
+    #     th, threshed = cv2.threshold(gray, 100, 255, cv2.THRESH_TRUNC)
+    #     result = pytesseract.image_to_string((threshed), lang="ind")
+    #     result = result.replace('?','7')
+    #     st.write(result)
 
-        regex_patterns = {
-            'NIK': r'NIK\s*:\s*(\d{16})',
-            'Nama': r'Nama\s*:\s*([A-Z\s]+)',
-            'Tempat/Tgl Lahir': r'Tempat/Tgi Lahir\s*:\s*([A-Z\s,]+),\s*(\d{2}-\d{2}-\d{4})',
-            'Jenis Kelamin': r'Jenis kelamin\s*:\s*([A-Z\-]+)',
-            'Alamat': r'Alamat\s*([A-Z0-9\s\.]+)',
-            'RT/RW': r'RI/RW\s*([0-9\/]+)',
-            'Kel/Desa': r'KelDesa\s*:\s*([A-Z\s]+)',
-            'Kecamatan': r'Kecamatan\s*:\s*([A-Z\s]+)',
-            'Agama': r'Agama\s*([A-Z\s]+)',
-            'Status Perkawinan': r'Status Perkawinan\s*([A-Z\s]+)',
-            'Pekerjaan': r'Pekerjaan\s*([A-Z\/]+)',
-            'Kewarganegaraan': r'Kewarganegaraan\s*([A-Z\s]+)',
-            'Berlaku Hingga': r'Berlaku Hingga\s*([A-Z\s]+)'
-        }
+    #     regex_patterns = {
+    #         'NIK': r'NIK\s*:\s*(\d{16})',
+    #         'Nama': r'Nama\s*:\s*([A-Z\s]+)',
+    #         'Tempat/Tgl Lahir': r'Tempat/Tgi Lahir\s*:\s*([A-Z\s,]+),\s*(\d{2}-\d{2}-\d{4})',
+    #         'Jenis Kelamin': r'Jenis kelamin\s*:\s*([A-Z\-]+)',
+    #         'Alamat': r'Alamat\s*([A-Z0-9\s\.]+)',
+    #         'RT/RW': r'RI/RW\s*([0-9\/]+)',
+    #         'Kel/Desa': r'KelDesa\s*:\s*([A-Z\s]+)',
+    #         'Kecamatan': r'Kecamatan\s*:\s*([A-Z\s]+)',
+    #         'Agama': r'Agama\s*([A-Z\s]+)',
+    #         'Status Perkawinan': r'Status Perkawinan\s*([A-Z\s]+)',
+    #         'Pekerjaan': r'Pekerjaan\s*([A-Z\/]+)',
+    #         'Kewarganegaraan': r'Kewarganegaraan\s*([A-Z\s]+)',
+    #         'Berlaku Hingga': r'Berlaku Hingga\s*([A-Z\s]+)'
+    #     }
 
-        # Initialize a dictionary to store the extracted information
-        extracted_info = {}
+    #     # Initialize a dictionary to store the extracted information
+    #     extracted_info = {}
 
-        # Extract information using regex patterns
-        for key, pattern in regex_patterns.items():
-            match = re.search(pattern, result)
-            if match:
-                extracted_info[key] = match.group(1)
-            else:
-                extracted_info[key] = 'Not found'
+    #     # Extract information using regex patterns
+    #     for key, pattern in regex_patterns.items():
+    #         match = re.search(pattern, result)
+    #         if match:
+    #             extracted_info[key] = match.group(1)
+    #         else:
+    #             extracted_info[key] = 'Not found'
 
-        # Create a DataFrame from the extracted information
-        df = pd.DataFrame.from_dict(extracted_info, orient='index', columns=['Value'])
-        df.index.rename('Information', inplace=True)
+    #     # Create a DataFrame from the extracted information
+    #     df = pd.DataFrame.from_dict(extracted_info, orient='index', columns=['Value'])
+    #     df.index.rename('Information', inplace=True)
 
-        return df
+    #     return df

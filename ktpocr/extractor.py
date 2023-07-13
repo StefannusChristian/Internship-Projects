@@ -6,16 +6,22 @@ import streamlit as st
 import os
 import pandas as pd
 import numpy as np
+from time import sleep
 from form import KTPInformation
 from test import Test
 from regex_maker import RegexMaker
 from annotated_text import annotated_text
+from streamlit_modal import Modal
+import streamlit.components.v1 as components
 
 class KTPOCR:
     def __init__(self):
         self.page_title = "KTP INDONESIA OCR"
         self.page_icon = "./icon_image.png"
         self.set_page_title_and_icon()
+        self.hide_side_menu = False
+        self.hide_footer = True
+        self.hide_styles(self.hide_side_menu,self.hide_footer)
         self.pytesseract_path = r"C:\Users\chris\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
         self.base_path = "./dataset/"
         self.file_path = None
@@ -40,7 +46,7 @@ class KTPOCR:
         self.regex_maker = None
         self.regex_patterns = None
 
-    def set_page_title_and_icon(self): st.set_page_config(page_title=self.page_title,page_icon=self.page_icon)
+    def set_page_title_and_icon(self): st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
     def process(self, information: str):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
@@ -130,9 +136,10 @@ class KTPOCR:
         return text.strip()
 
     def extract(self, extracted_result:str, information:str):
+        # st.error(extracted_result)
         if information == "default":
             for word in extracted_result.split("\n"):
-                st.success(word)
+                st.warning(word)
                 # EXTRACT PROVINSI
                 if "PROVINSI" in word: self.extract_provinsi(word)
 
@@ -161,7 +168,7 @@ class KTPOCR:
                 if "Desa" in word: self.extract_kelurahan_atau_desa(word)
 
                 # EXTRACT KEWARGANEGARAAN
-                if 'Kewarganegaraan' in word: self.extract_kewarganegaraan(word)
+                if any(keyword in word for keyword in self.patterns_to_found["kewarganegaraan"]): self.extract_kewarganegaraan(word)
 
                 # EXTRACT PEKERJAAN
                 if 'Pekerjaan' in word: self.extract_pekerjaan(word)
@@ -179,7 +186,7 @@ class KTPOCR:
                 if 'Berlaku' in word: self.extract_berlaku_hingga(word)
 
                 # EXTRACT BERLAKU HINGGA SEUMUR HIDUP
-                if any(keyword in word for keyword in self.patterns_to_found["berlaku_hingga"]): self.result.berlaku_hingga = "SEUMUR HIDUP"
+                if any(keyword in word for keyword in self.patterns_to_found["berlaku_hingga"]): self.result.BerlakuHingga = "SEUMUR HIDUP"
 
         elif information == "nik":
             for word in extracted_result.split("\n"):
@@ -189,8 +196,8 @@ class KTPOCR:
 
     def extract_nik(self, word):
         if ":" in word: word = word.split(':')
-        try: self.result.nik = self.clean_nik(word[-1].replace(" ", ""))
-        except: self.result.nik = None
+        try: self.result.NIK = self.clean_nik(word[-1].replace(" ", ""))
+        except: self.result.NIK = None
 
     def remove_dots(self, word:str):
         word = word.replace(".","")
@@ -201,31 +208,31 @@ class KTPOCR:
             alamat = self.word_to_number_converter(word).replace("Alamat","")
             alamat = self.clean_semicolons_and_stripes(alamat).strip()
             alamat = self.remove_dots(alamat)
-            if self.result.alamat: self.result.alamat += alamat
-            else: self.result.alamat = alamat
-        except: self.result.alamat = None
+            if self.result.Alamat: self.result.Alamat += alamat
+            else: self.result.Alamat = alamat
+        except: self.result.Alamat = None
 
     def extract_berlaku_hingga(self, word):
         if ':' in word: word = word.split(":")
         try:
             berlaku_hingga = word[1]
-            self.result.berlaku_hingga = berlaku_hingga.strip()
-        except: self.result.berlaku_hingga = None
+            self.result.BerlakuHingga = berlaku_hingga.strip()
+        except: self.result.BerlakuHingga = None
 
     def extract_kewarganegaraan(self, word):
         if ":" in word: word = word.split(":")
-        try: self.result.kewarganegaraan = word[1].strip()
-        except: self.result.kewarganegaraan = None
+        try: self.result.Kewarganegaraan = word[1].strip()
+        except: self.result.Kewarganegaraan = None
 
     def extract_kecamatan(self, word):
         if ":" in word: word = word.split(":")
         elif "." in word: word = word.split('.')
-        try: self.result.kecamatan = word[1].strip()
-        except: self.result.kecamatan = None
+        try: self.result.Kecamatan = word[1].strip()
+        except: self.result.Kecamatan = None
 
     def extract_perkawinan(self,word):
-        try: self.result.status_perkawinan = re.search("BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED",word)[0]
-        except:self.result.status_perkawinan = None
+        try: self.result.StatusPerkawinan = re.search("BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED",word)[0]
+        except:self.result.StatusPerkawinan = None
 
     def extract_kelurahan_atau_desa(self, word):
         if ":" in word: word = word.split(':')
@@ -233,8 +240,9 @@ class KTPOCR:
         else: word = word.split()
         try:
             kelurahan_atau_desa = "".join(word[1:]).strip()
-            self.result.kelurahan_atau_desa = kelurahan_atau_desa
-        except: self.result.kelurahan_atau_desa = kelurahan_atau_desa
+            kelurahan_atau_desa = self.clean_semicolons_and_stripes(kelurahan_atau_desa)
+            self.result.KelurahanAtauDesa = kelurahan_atau_desa
+        except: self.result.KelurahanAtauDesa = kelurahan_atau_desa
 
     def extract_pekerjaan(self, word):
         word = word.split()
@@ -243,7 +251,7 @@ class KTPOCR:
             if not '-' in wr: pekerjaan.append(wr)
         pekerjaan = ' '.join(pekerjaan).replace('Pekerjaan', '').strip()
         pekerjaan = self.clean_semicolons_and_stripes(pekerjaan)
-        self.result.pekerjaan = pekerjaan
+        self.result.Pekerjaan = pekerjaan
 
     def remove_all_letters(self, word: str): return ''.join(filter(str.isdigit, word))
 
@@ -258,35 +266,35 @@ class KTPOCR:
             rt = digits[:3]
             rw = digits[-3:]
         try:
-            self.result.rt = rt
-            self.result.rw = rw
+            self.result.RT = rt
+            self.result.RW = rw
         except:
-            self.result.rt = None
-            self.result.rw = None
+            self.result.RT = None
+            self.result.RW = None
 
     def extract_golongan_darah_and_jenis_kelamin(self, word):
         try:
-            self.result.jenis_kelamin = re.search(self.regex_patterns['gender'], word)[0]
+            self.result.JenisKelamin = re.search(self.regex_patterns['gender'], word)[0]
             word = word.split(':')
-            self.result.golongan_darah = re.search(self.regex_patterns['goldar'], word[-1])[0]
-        except: self.result.golongan_darah = None
+            self.result.GolonganDarah = re.search(self.regex_patterns['goldar'], word[-1])[0]
+        except: self.result.GolonganDarah = None
 
     def extract_agama(self, word):
         word = word.replace("Agama","")
         agama = self.clean_semicolons_and_stripes(word).strip()
-        try: self.result.agama = re.search(self.regex_patterns["agama"],agama)[0]
-        except: self.result.agama = None
+        try: self.result.Agama = re.search(self.regex_patterns["agama"],agama)[0]
+        except: self.result.Agama = None
 
     def extract_provinsi(self, word):
         word = word.split(" ")
         provinsi = " ".join(word[1:])
-        try: self.result.provinsi = re.search(self.regex_patterns["provinsi"],provinsi)[0].strip()
-        except: self.result.provinsi = None
+        try: self.result.Provinsi = re.search(self.regex_patterns["provinsi"],provinsi)[0].strip()
+        except: self.result.Provinsi = None
 
     def extract_kota_kabupaten(self, word, is_jakarta: bool):
         if is_jakarta:
-            try: self.result.kota_atau_kabupaten = re.search(self.regex_patterns["jakarta"],word)[0].strip()
-            except: self.result.kota_atau_kabupaten = None
+            try: self.result.KotaAtauKabupaten = re.search(self.regex_patterns["jakarta"],word)[0].strip()
+            except: self.result.KotaAtauKabupaten = None
         else:
             word = word.split(" ")
             if "KOTA" in word: index = word.index("KOTA")
@@ -296,24 +304,25 @@ class KTPOCR:
             except: pass
 
             kota_kabupaten = " ".join(word[1:])
-            try: self.result.kota_atau_kabupaten = word[0] + " "+ re.search(self.regex_patterns["kota_kabupaten"],kota_kabupaten)[0].strip()
-            except: self.result.kota_atau_kabupaten = None
+            try: self.result.KotaAtauKabupaten = word[0] + " "+ re.search(self.regex_patterns["kota_kabupaten"],kota_kabupaten)[0].strip()
+            except: self.result.KotaAtauKabupaten = None
 
     def extract_name(self, word):
-        word = word.replace("Nama","")
-        name = self.clean_semicolons_and_stripes(word).strip()
-        try: self.result.nama = name
-        except: self.result.nama = None
+        try:
+            word = word.replace("Nama","")
+            name = self.clean_semicolons_and_stripes(word).strip()
+            self.result.Nama = name
+        except: self.result.Nama = None
 
     def extract_tempat_tanggal_lahir(self, word):
         try:
             word = word.split(" ")
             tempat_lahir, tanggal_lahir = word[-2],word[-1]
 
-            self.result.tanggal_lahir = tanggal_lahir
-            self.result.tempat_lahir = tempat_lahir
+            self.result.TanggalLahir = tanggal_lahir
+            self.result.TempatLahir = tempat_lahir
 
-        except: self.result.tempat_lahir = None
+        except: self.result.TempatLahir = None
 
     def master_process(self, information: str):
         raw_text = self.process(information)
@@ -364,7 +373,38 @@ class KTPOCR:
 
     def make_annotated_text(self, main_text:str,secondary_text:str,color:str): return annotated_text((main_text,secondary_text,color))
 
+    def hide_styles(self, hide_main_menu: bool, hide_footer: bool):
+        style_string = ""
+
+        if hide_main_menu:
+            style_string += """
+            #MainMenu {visibility: hidden}
+            """
+
+        if hide_footer:
+            style_string += """
+            footer {visibility: hidden}
+            """
+
+        if style_string:
+            style_html = f"<style>{style_string}</style>"
+            st.markdown(style_html, unsafe_allow_html=True)
+
+    def show_modal(self, is_verified: bool, key: str, button):
+        modal = Modal("",key,max_width=250,padding=0)
+        if button:
+            modal.open()
+
+        if modal.is_open():
+            if is_verified:
+                with modal.container():
+                    st.image("./verified.gif")
+                    sleep(2.5)
+                    modal.close()
+
     def run(self):
+        verify_button = st.button("Verify")
+
         if self.choice:
             self.file_path = self.base_path + self.choice
             self.image = cv2.imread(self.file_path)
@@ -374,28 +414,34 @@ class KTPOCR:
             self.image_name_for_test = self.get_ktp_image_name(True)
             self.tester = Test(self.image_name_for_test)
 
-        self.make_annotated_text("HAN","SOHEE","#800507")
+        if True:
+            st.header(self.image_name)
+            col1, col2 = st.columns(2)
 
-        st.header(self.image_name)
-        st.image(self.original_image, caption=self.image_name,use_column_width=True)
+            self.make_annotated_text("HAN","SOHEE","#800507")
 
-        self.preprocess_data_kode_wilayah_df()
-        self.regex_maker = RegexMaker(self.data_kode_wilayah_df)
-        self.regex_patterns = self.regex_maker.make_regex_dict()
-        self.patterns_to_found = self.regex_maker.patterns_to_found
+            with col2:
+                st.image(self.original_image, caption=self.image_name,use_column_width=True)
 
-        for information in self.informations: self.master_process(information)
+            self.preprocess_data_kode_wilayah_df()
+            self.regex_maker = RegexMaker(self.data_kode_wilayah_df)
+            self.regex_patterns = self.regex_maker.make_regex_dict()
+            self.patterns_to_found = self.regex_maker.patterns_to_found
 
-        df = self.make_dataframe()
-        self.verified,num_correct,self.threshold_num = self.verify_ocr(df)
-        st.dataframe(df,use_container_width=True,height=700)
+            for information in self.informations: self.master_process(information)
 
-        show_ratio = f"{num_correct}/18"
-        show_threshold = f" Threshold: {self.threshold_num}"
+            df = self.make_dataframe()
+            self.verified,num_correct,self.threshold_num = self.verify_ocr(df)
 
-        if self.verified:
-            st.success("VERIFIED!")
-            st.balloons()
-        else: st.error("NOT VERIFIED!")
+            with col1:
+                st.dataframe(df,use_container_width=True,height=700)
 
-        st.info(show_ratio+show_threshold)
+            show_ratio = f"{num_correct}/18"
+            show_threshold = f" Threshold: {self.threshold_num}"
+
+            if self.verified:
+                st.success("VERIFIED!")
+
+            else: st.error("NOT VERIFIED!")
+
+            st.info(show_ratio+show_threshold)

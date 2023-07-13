@@ -10,14 +10,16 @@ class RegexMaker:
         self.jakarta_regex_pattern = "JAKARTA BARAT|JAKARTA PUSAT|JAKARTA TIMUR|JAKARTA SELATAN|JAKARTA UTARA"
         self.goldar_regex_pattern = "O|A|B|AB|-"
         self.agama_regex_pattern = "ISLAM|KRISTEN|KATOLIK|BUDHA|HINDU|KONGHUCHU"
-        self.gender_regex_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE"
+        self.gender_regex_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE|LAKILAKI|LAKI"
         self.patterns_to_found = {
             "rtrw": ["RTRW", "RT/RW"],
             "kota_kabupaten": ["KOTA","KABUPATEN"],
             "tempat": ["Tempat","TgiLahir","TglLahir"],
             "berlaku_hingga":["SEUMUR","HIDUP","SEUMUR HIDUP"],
             "alamat":["NO","NO.","Alamat"],
-            "kawin":["Status","Status Perkawinan"]
+            "kawin":["Status","Status Perkawinan"],
+            "pekerjaan":["Pekerjaan","Peker"],
+            "kewarganegaraan":["Kewarganegaraan","warganegaraan"],
         }
         self.web_scraper = JobScraper()
 

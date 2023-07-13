@@ -105,8 +105,8 @@ class Test:
             "ren":{
                 "provinsi":"JAWA TENGAH",
                 "kota_atau_kabupaten": "KOTA SEMARANG",
-                "nik":"33740369040001",
-                "nama":"RENATA VALENCIA",
+                "nik":"3374036904020001",
+                "nama":"RENATA VALENCIA SOETARDJO",
                 "tempat_lahir": "SEMARANG",
                 "tanggal_lahir":"29-04-2002",
                 "jenis_kelamin": "PEREMPUAN",
@@ -162,6 +162,106 @@ class Test:
                 "kewarganegaraan": "WNI",
                 "berlaku_hingga":"26-02-2017"
             },
+            "benny":{
+                "provinsi":"DKI JAKARTA",
+                "kota_atau_kabupaten": "JAKARTA SELATAN",
+                "nik":"3174071602530001",
+                "nama":"BENNY DARMAWAN USMAN",
+                "tempat_lahir": "U PANDANG",
+                "tanggal_lahir":"16-02-1953",
+                "jenis_kelamin": "LAKI-LAKI",
+                "golongan_darah": "O",
+                "alamat": "JL ANTENE IV/9",
+                "rt": "016",
+                "rw": "002",
+                "kelurahan_atau_desa": "GANDARIA UTARA",
+                "kecamatan": "KEBAYORAN BARU",
+                "agama": "KATHOLIK",
+                "status_perkawinan": "CERAI HIDUP",
+                "pekerjaan": "PENSIUNAN",
+                "kewarganegaraan": "WNI",
+                "berlaku_hingga":"SEUMUR HIDUP"
+            },
+            "jokowi":{
+                "provinsi":"DKI JAKARTA",
+                "kota_atau_kabupaten": "JAKARTA PUSAT",
+                "nik":"3372052106610006",
+                "nama":"IR JOKO WIDODO",
+                "tempat_lahir": "SURAKARTA",
+                "tanggal_lahir":"21-06-1961",
+                "jenis_kelamin": "LAKI-LAKI",
+                "golongan_darah": "A",
+                "alamat": "JL TAMAN SUROPATI NO 7",
+                "rt": "005",
+                "rw": "005",
+                "kelurahan_atau_desa": "MENTENG",
+                "kecamatan": "MENTENG",
+                "agama": "ISLAM",
+                "status_perkawinan": "KAWIN",
+                "pekerjaan": "GUBERNUR",
+                "kewarganegaraan": "WNI",
+                "berlaku_hingga":"21-06-2017"
+            },
+            "febrina":{
+                "provinsi":"DKI JAKARTA",
+                "kota_atau_kabupaten": "JAKARTA TIMUR",
+                "nik":"3175076508940009",
+                "nama":"FEBRINA RESHITA DEVI",
+                "tempat_lahir": "JAKARTA",
+                "tanggal_lahir":"25-08-1994",
+                "jenis_kelamin": "PEREMPUAN",
+                "golongan_darah": "-",
+                "alamat": "JL KELURAHAN IV",
+                "rt": "011",
+                "rw": "011",
+                "kelurahan_atau_desa": "DUREN SAWIT",
+                "kecamatan": "DUREN SAWIT",
+                "agama": "ISLAM",
+                "status_perkawinan": "BELUM KAWIN",
+                "pekerjaan": "KARYAWAN SWASTA",
+                "kewarganegaraan": "WNI",
+                "berlaku_hingga":"SEUMUR HIDUP"
+            },
+            "handoko":{
+                "provinsi":"KEPULAUAN RIAU",
+                "kota_atau_kabupaten": "KOTA BATAM",
+                "nik":"2171101212749021",
+                "nama":"HANDOKO",
+                "tempat_lahir": "BANJARMASIN",
+                "tanggal_lahir":"12-12-1974",
+                "jenis_kelamin": "LAKI-LAKI",
+                "golongan_darah": "-",
+                "alamat": "GOLDEN LAND BLOK F NO 39",
+                "rt": "002",
+                "rw": "013",
+                "kelurahan_atau_desa": "TAMAN BALOI",
+                "kecamatan": "BATAM KOTA",
+                "agama": "KRISTEN",
+                "status_perkawinan": "KAWIN",
+                "pekerjaan": "WIRASWASTA",
+                "kewarganegaraan": "WNI",
+                "berlaku_hingga":"SEUMUR HIDUP"
+            },
+            "mira":{
+                "provinsi":"DKI JAKARTA",
+                "kota_atau_kabupaten": "JAKARTA BARAT",
+                "nik":"3171234567890123",
+                "nama":"MIRA SETIAWAN",
+                "tempat_lahir": "JAKARTA",
+                "tanggal_lahir":"18-02-1986",
+                "jenis_kelamin": "PEREMPUAN",
+                "golongan_darah": "B",
+                "alamat": "JL PASTI CEPAT A7/66",
+                "rt": "007",
+                "rw": "008",
+                "kelurahan_atau_desa": "PEGADUNGAN",
+                "kecamatan": "KALIDERES",
+                "agama": "ISLAM",
+                "status_perkawinan": "KAWIN",
+                "pekerjaan": "PEGAWAI SWASTA",
+                "kewarganegaraan": "WNI",
+                "berlaku_hingga":"22-02-2017"
+            }
         }
 
     def get_test_values(self, dictionary: dict): return dictionary.values()
@@ -175,3 +275,8 @@ class Test:
         elif self.ktp_name == "ren": return self.get_test_values(self.test_dict['ren'])
         elif self.ktp_name == "victor": return self.get_test_values(self.test_dict['victor'])
         elif self.ktp_name == "sulistyono": return self.get_test_values(self.test_dict['sulistyono'])
+        elif self.ktp_name == "benny": return self.get_test_values(self.test_dict['benny'])
+        elif self.ktp_name == "jokowi": return self.get_test_values(self.test_dict['jokowi'])
+        elif self.ktp_name == "febrina": return self.get_test_values(self.test_dict['febrina'])
+        elif self.ktp_name == "handoko": return self.get_test_values(self.test_dict['handoko'])
+        elif self.ktp_name == "mira": return self.get_test_values(self.test_dict['mira'])
