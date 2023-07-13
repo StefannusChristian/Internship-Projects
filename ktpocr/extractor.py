@@ -9,9 +9,13 @@ import numpy as np
 from form import KTPInformation
 from test import Test
 from regex_maker import RegexMaker
+from annotated_text import annotated_text
 
 class KTPOCR:
     def __init__(self):
+        self.page_title = "KTP INDONESIA OCR"
+        self.page_icon = "./icon_image.png"
+        self.set_page_title_and_icon()
         self.pytesseract_path = r"C:\Users\chris\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
         self.base_path = "./dataset/"
         self.file_path = None
@@ -19,7 +23,7 @@ class KTPOCR:
         self.original_image = None
         self.gray = None
         self.threshold_values = {
-            'nik':110,
+            'nik':100,
             'default': 127
         }
         self.informations = ["nik","default"]
@@ -31,10 +35,12 @@ class KTPOCR:
         self.choice = self.showSelectBox()
         self.verified = None
         self.threshold_num = None
-        self.ocr_threshold = st.slider(label='OCR Threshold', min_value=0.0, max_value=1.0, step=0.05, value=0.8)
+        self.ocr_threshold = st.slider(label='OCR Threshold', min_value=0.0, max_value=1.0, step=0.05, value=0.75)
         self.data_kode_wilayah_df = pd.read_excel("./data_kode_wilayah.xlsx")
         self.regex_maker = None
         self.regex_patterns = None
+
+    def set_page_title_and_icon(self): st.set_page_config(page_title=self.page_title,page_icon=self.page_icon)
 
     def process(self, information: str):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
@@ -245,8 +251,12 @@ class KTPOCR:
         pattern = re.compile('|'.join(map(re.escape, self.patterns_to_found['rtrw'])))
         word = pattern.sub(" ", word).strip()
         digits = re.sub(r'\D', '', word)
-        rt = digits[:len(digits)//2]
-        rw = digits[len(digits)//2:]
+        if len(digits) == 6:
+            rt = digits[:len(digits)//2]
+            rw = digits[len(digits)//2:]
+        else:
+            rt = digits[:3]
+            rw = digits[-3:]
         try:
             self.result.rt = rt
             self.result.rw = rw
@@ -297,20 +307,11 @@ class KTPOCR:
 
     def extract_tempat_tanggal_lahir(self, word):
         try:
-            if ":" in word: word = word.split(':')
-            elif "-" in word: word = word.split('-')
-            if len(word) > 2:
-                word = "-".join(word[1:])
-                word = word[1].split("")[1:]
-                st.error(word)
-                tempat_lahir, tanggal_lahir = word[0], "-".join(word[1:])
-            else:
-                word = word[1].split(" ")[1:]
-                st.error(word)
-                tempat_lahir, tanggal_lahir = word[0], "-".join(word[1:])
+            word = word.split(" ")
+            tempat_lahir, tanggal_lahir = word[-2],word[-1]
 
-            self.result.tanggal_lahir = self.remove_dots_from_string(tanggal_lahir)
-            self.result.tempat_lahir = self.remove_dots_from_string(tempat_lahir)
+            self.result.tanggal_lahir = tanggal_lahir
+            self.result.tempat_lahir = tempat_lahir
 
         except: self.result.tempat_lahir = None
 
@@ -361,6 +362,8 @@ class KTPOCR:
             'DI YOGYAKARTA': 'DAERAH ISTIMEWA YOGYAKARTA'
         })
 
+    def make_annotated_text(self, main_text:str,secondary_text:str,color:str): return annotated_text((main_text,secondary_text,color))
+
     def run(self):
         if self.choice:
             self.file_path = self.base_path + self.choice
@@ -370,6 +373,8 @@ class KTPOCR:
             self.image_name = self.get_ktp_image_name(False)
             self.image_name_for_test = self.get_ktp_image_name(True)
             self.tester = Test(self.image_name_for_test)
+
+        self.make_annotated_text("HAN","SOHEE","#800507")
 
         st.header(self.image_name)
         st.image(self.original_image, caption=self.image_name,use_column_width=True)
