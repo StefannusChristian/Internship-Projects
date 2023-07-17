@@ -9,7 +9,7 @@ import numpy as np
 from time import sleep
 from form import KTPInformation
 from test import Test
-from regex_maker import RegexMaker
+from verifier import Verifier
 from annotated_text import annotated_text
 from streamlit_modal import Modal
 from jaro import jaro_winkler_metric
@@ -46,8 +46,8 @@ class KTPOCR:
         self.threshold_num = None
         self.ocr_threshold = st.slider(label='OCR Threshold', min_value=0.0, max_value=1.0, step=0.05, value=0.75)
         self.data_kode_wilayah_df = pd.read_excel("./data_kode_wilayah.xlsx")
-        self.regex_maker = None
-        self.regex_patterns = None
+        self.verifier = None
+        self.verifier_maker = None
         self.jaro_winkler_threshold = 0.8
         self.preprocessed = False
         self.special_characters = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~']
@@ -116,6 +116,10 @@ class KTPOCR:
         text = text.replace(":","")
         return text
 
+    def remove_dots(self, text: str):
+        text = text.replace(".","")
+        return text
+
     def replace_letter_from_word_dict(self, word, d: dict):
         res = ""
         for letter in word:
@@ -130,11 +134,14 @@ class KTPOCR:
         return self.replace_letter_from_word_dict(word, word_dict)
 
     def extract(self, extracted_result:str, information:str):
+        lines = extracted_result.split("\n")
         if information == "default":
-            st.success(extracted_result)
-            for word in extracted_result.split("\n"):
+            st.error(extracted_result)
+            st.warning(lines)
+            for idx,word in enumerate(lines):
                 info = word.split(" ")[0].strip()
                 if info in self.special_characters: info = word.split(" ")[1].strip()
+                st.success(word)
                 st.info(info)
 
                 # EXTRACT PROVINSI
@@ -147,7 +154,9 @@ class KTPOCR:
                 if self.find_string_similarity(info,"JAKARTA") >= self.jaro_winkler_threshold: self.extract_kota_kabupaten(word,True)
 
                 # EXTRACT NAMA
-                if self.find_string_similarity(info,"Nama") >= self.jaro_winkler_threshold: self.extract_name(word)
+                if self.find_string_similarity(info,"Nama") >= self.jaro_winkler_threshold:
+                    extra_name = lines[idx+1]
+                    self.extract_name(word, extra_name)
 
                 # EXTRACT TEMPAT TANGGAL LAHIR
                 if self.find_string_similarity(info,"Tempat/TglLahir") >= self.jaro_winkler_threshold: self.extract_tempat_tanggal_lahir(word)
@@ -156,7 +165,9 @@ class KTPOCR:
                 if self.find_string_similarity(info,"Jenis") >= self.jaro_winkler_threshold: self.extract_golongan_darah_and_jenis_kelamin(word)
 
                 # EXTRACT ALAMAT
-                if self.find_string_similarity(info,"Alamat") >= self.jaro_winkler_threshold: self.extract_alamat(word)
+                if self.find_string_similarity(info,"Alamat") >= self.jaro_winkler_threshold:
+                    extra_alamat = lines[idx+1]
+                    if self.find_string_similarity(extra_alamat.split(" ")[0], "Status") < self.jaro_winkler_threshold: self.extract_alamat(word, extra_alamat)
 
                 # EXTRACT KECAMATAN
                 if self.find_string_similarity(info,"Kecamatan") >= self.jaro_winkler_threshold: self.extract_kecamatan(word)
@@ -185,41 +196,55 @@ class KTPOCR:
                 # EXTRACT BERLAKU HINGGA
                 if self.find_string_similarity(info,"Berlaku") >= self.jaro_winkler_threshold: self.extract_berlaku_hingga(word)
 
+                # Extract Tricky Case Pekerjaan
+                best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["jobs"],word)
+                if best_match and best_similarity >= self.jaro_winkler_threshold: self.extract_pekerjaan(word)
+
         elif information == "nik":
-            for word in extracted_result.split("\n"):
-                if "NIK" in word:
-                    self.extract_nik(word)
+            nik_regex = r"\d+\s*"
+            for word in lines:
+                match = re.search(nik_regex, word)
+                if match:
+                    # NIK in Word
+                    if self.find_string_similarity(word,"NIK") >= self.jaro_winkler_threshold:
+                        self.extract_nik(word, True)
+                    else:
+                        word = word.replace(" ","")
+                        # Plain NIK in Word
+                        self.extract_nik(word, False)
                     break
 
-    def extract_nik(self, word):
-        st.error(word)
-        if ":" in word: word = word.split(':')
-        try:
-            nik = word[-1].replace(" ", "")
-            missed_extracted_letters = {
-                'b' : "6",
-                'e' : "2",
-                '?':'7',
-            }
-            nik = self.replace_letter_from_word_dict(nik, missed_extracted_letters)
-            nik = re.sub(r"[^\d]", "", nik)
-            self.result.NIK = nik.strip()
-        except: self.result.NIK = None
+    def extract_nik(self, word, is_nik_in_word):
+        if is_nik_in_word:
+            if ":" in word: word = word.split(':')
+            try:
+                nik = word[-1].replace(" ", "")
+                missed_extracted_letters = {
+                    'b' : "6",
+                    'e' : "2",
+                    '?':'7',
+                }
+                nik = self.replace_letter_from_word_dict(nik, missed_extracted_letters)
+                nik = re.sub(r"[^\d]", "", nik)
+                self.result.NIK = nik.strip()
+            except: self.result.NIK = None
+        else: self.result.NIK = word.strip()
 
-    def extract_alamat(self, word: str):
+    def extract_alamat(self, word: str, extra_alamat: str):
         try:
             alamat = self.word_to_number_converter(word).replace("Alamat", "")
-            alamat = self.remove_semicolons(alamat).strip()
 
             alamat_parts = alamat.split("Agama", 1)
-            alamat = alamat_parts[0].strip()
-
+            alamat = alamat_parts[0]
+            alamat = self.clean_semicolons_and_stripes(alamat).strip()
             if self.result.Alamat: self.result.Alamat += alamat
             else: self.result.Alamat = alamat
+            if self.find_string_similarity(extra_alamat, "RT/RW") <= self.jaro_winkler_threshold: self.result.Alamat+= " "+extra_alamat
 
         except: self.result.Alamat = None
 
     def extract_berlaku_hingga(self, word):
+        st.error(word)
         if ':' in word: word = word.split(":")
         try:
             berlaku_hingga = word[1]
@@ -228,7 +253,14 @@ class KTPOCR:
 
     def extract_kewarganegaraan(self, word):
         if ":" in word: word = word.split(":")
-        try: self.result.Kewarganegaraan = word[1].strip()
+        kewarganegaraan = word[1].strip()
+        kewarganegaraan = self.clean_semicolons_and_stripes(kewarganegaraan)
+        kewarganegaraan = self.remove_dots(kewarganegaraan)
+        check_kewarganegaraan = kewarganegaraan.split(" ")
+
+        if len(check_kewarganegaraan) > 1: kewarganegaraan = check_kewarganegaraan[0]
+
+        try: self.result.Kewarganegaraan = kewarganegaraan.strip()
         except: self.result.Kewarganegaraan = None
 
     def extract_kecamatan(self, word):
@@ -238,7 +270,7 @@ class KTPOCR:
         except: self.result.Kecamatan = None
 
     def extract_perkawinan(self,word):
-        try: self.result.StatusPerkawinan = re.search(self.regex_patterns["status_perkawinan"],word)[0]
+        try: self.result.StatusPerkawinan = re.search(self.verifier_maker["status_perkawinan"],word)[0]
         except:self.result.StatusPerkawinan = None
 
     def extract_kelurahan_atau_desa(self, word):
@@ -257,44 +289,60 @@ class KTPOCR:
             pekerjaan = []
             for wr in word:
                 if not '-' in wr: pekerjaan.append(wr)
-            pekerjaan = ' '.join(pekerjaan).replace('Pekerjaan', '').strip()
+            pekerjaan = ' '.join(pekerjaan).replace(word[0], '').strip()
             pekerjaan = self.clean_semicolons_and_stripes(pekerjaan)
+            check_pekerjaan = pekerjaan.split(" ")
+            pekerjaan_suffix = " ".join(check_pekerjaan[1:])
+            if self.find_string_similarity(pekerjaan_suffix,self.result.KotaAtauKabupaten) >= self.jaro_winkler_threshold: pekerjaan = check_pekerjaan[0]
             self.result.Pekerjaan = pekerjaan
         except: self.result.Pekerjaan = None
 
     def remove_all_letters(self, word: str): return ''.join(filter(str.isdigit, word))
 
-    def extract_rt_rw(self,word):
-        pattern = re.compile('|'.join(map(re.escape, ["RTRW", "RT/RW"])))
-        word = pattern.sub(" ", word).strip()
-        digits = re.sub(r'\D', '', word)
-        if len(digits) == 6:
-            rt = digits[:len(digits)//2]
-            rw = digits[len(digits)//2:]
-        else:
-            rt = digits[:3]
-            rw = digits[-3:]
+    def extract_rt_rw(self, word):
+        rtrw = word.split(" ")[0].strip()
         try:
-            self.result.RT = rt
-            self.result.RW = rw
+            if self.find_string_similarity(rtrw, "RT/RW") >= self.jaro_winkler_threshold:
+                pattern = re.compile(re.escape(rtrw))
+                word = pattern.sub(" ", word).strip()
+                digits = re.sub(r'\D', '', word)
+
+                if digits:
+                    if len(digits) == 6:
+                        rt = digits[:len(digits)//2]
+                        rw = digits[len(digits)//2:]
+                    else:
+                        rt = digits[:3]
+                        rw = digits[-3:]
+                else:
+                    rt = None
+                    rw = None
+
+                self.result.RT = rt
+                self.result.RW = rw
+            else:
+                self.result.RT = None
+                self.result.RW = None
         except:
             self.result.RT = None
             self.result.RW = None
 
     def extract_golongan_darah_and_jenis_kelamin(self, word):
         try:
-            self.result.JenisKelamin = re.search(self.regex_patterns['gender'], word)[0]
+            self.result.JenisKelamin = re.search(self.verifier_maker['gender'], word)[0]
             word = word.split(':')
-            self.result.GolonganDarah = re.search(self.regex_patterns['goldar'], word[-1])[0]
+            self.result.GolonganDarah = re.search(self.verifier_maker['goldar'], word[-1])[0]
         except: self.result.GolonganDarah = None
 
     def extract_agama(self, word):
-        word = word.replace("Agama","")
-        agama = self.clean_semicolons_and_stripes(word).strip()
-        try: self.result.Agama = re.search(self.regex_patterns["agama"],agama)[0]
+        try:
+            word = word.replace("Agama","")
+            agama = self.clean_semicolons_and_stripes(word).strip()
+            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["agama"], agama)
+            if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Agama = best_match.strip()
         except: self.result.Agama = None
 
-    def find_best_match_from_regex_pattern(self, pattern_list: list, word: str):
+    def find_best_match_from_verifier_pattern(self, pattern_list: list, word: str):
         best_match = None
         best_similarity = 0
         for pattern in pattern_list:
@@ -305,20 +353,29 @@ class KTPOCR:
         return best_match, best_similarity
 
     def extract_provinsi(self, word):
-        word = word.split(" ")
-        provinsi = " ".join(word[1:])
-        provinsi = self.clean_semicolons_and_stripes(provinsi)
-        pattern_list = self.regex_patterns["provinsi"].split("|")
-        best_match, best_similarity = self.find_best_match_from_regex_pattern(pattern_list, provinsi)
+        try:
+            word = word.split(" ")
+            if len(word) == 1: provinsi = word[0].replace("PROVINSI", " ").strip()
+            else:
+                provinsi = " ".join(word[1:])
+                provinsi = self.clean_semicolons_and_stripes(provinsi)
 
-        if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Provinsi = best_match.strip()
-        else: self.result.Provinsi = None
+            pattern_list = self.verifier_maker["provinsi"]
+            best_match, best_similarity = self.find_best_match_from_verifier_pattern(pattern_list, provinsi)
+
+            if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Provinsi = best_match.strip()
+            else: self.result.Provinsi = None
+        except: self.result.Provinsi = None
 
     def extract_kota_kabupaten(self, word, is_jakarta: bool):
         if is_jakarta:
-            try: self.result.KotaAtauKabupaten = re.search(self.regex_patterns["jakarta"],word)[0].strip()
+            pattern_list = self.verifier_maker["jakarta"]
+            try:
+                best_match, best_similarity = self.find_best_match_from_verifier_pattern(pattern_list, word)
+                if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.KotaAtauKabupaten = best_match.strip()
             except: self.result.KotaAtauKabupaten = None
         else:
+            pattern_list = self.verifier_maker["kota_kabupaten"]
             word = word.split(" ")
             if "KOTA" in word: index = word.index("KOTA")
             elif "KABUPATEN" in word: index = word.index("KABUPATEN")
@@ -327,14 +384,18 @@ class KTPOCR:
             except: pass
 
             kota_kabupaten = " ".join(word[1:])
-            try: self.result.KotaAtauKabupaten = word[0] + " "+ re.search(self.regex_patterns["kota_kabupaten"],kota_kabupaten)[0].strip()
+            try:
+                best_match, best_similarity = self.find_best_match_from_verifier_pattern(pattern_list, kota_kabupaten)
+                if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.KotaAtauKabupaten = word[0] + " "+best_match.strip()
             except: self.result.KotaAtauKabupaten = None
 
-    def extract_name(self, word):
+    def extract_name(self, word, extra_name: str):
         try:
             word = word.replace("Nama","")
-            name = self.clean_semicolons_and_stripes(word).strip()
-            self.result.Nama = name
+            name = self.clean_semicolons_and_stripes(word)
+            if self.find_string_similarity(extra_name, "Tempat/TglLahir") < 0.6:
+                name += " "+extra_name
+            self.result.Nama = name.strip()
         except: self.result.Nama = None
 
     def extract_tempat_tanggal_lahir(self, word):
@@ -384,7 +445,6 @@ class KTPOCR:
         choice = st.selectbox("Select KTP File", all_files)
         return choice
 
-    @timeit
     def preprocess_data_kode_wilayah_df(self):
         if self.preprocessed: return
         self.data_kode_wilayah_df = self.data_kode_wilayah_df.loc[:, ~self.data_kode_wilayah_df.columns.str.contains('^Unnamed')]
@@ -434,7 +494,7 @@ class KTPOCR:
     def find_string_similarity(self, string1: str, string2: str): return round(jaro_winkler_metric(string1,string2),2)
 
     @cached(cache)
-    def make_regex_dict(self): return self.regex_maker.make_regex_dict()
+    def make_verifier_dict(self): return self.verifier.make_verifier_dict()
 
     def run(self):
         # verify_button = st.button("Verify")
@@ -457,8 +517,8 @@ class KTPOCR:
             with col2: st.image(self.original_image, caption=self.image_name,use_column_width=True)
 
             self.preprocess_data_kode_wilayah_df()
-            self.regex_maker = RegexMaker(self.data_kode_wilayah_df)
-            self.regex_patterns = self.make_regex_dict()
+            self.verifier = Verifier(self.data_kode_wilayah_df)
+            self.verifier_maker = self.make_verifier_dict()
 
             for information in self.informations: self.master_process(information)
 
@@ -471,9 +531,12 @@ class KTPOCR:
             show_ratio = f"{num_correct}/18"
             show_threshold = f" Threshold: {self.threshold_num}"
 
-            if self.verified:
-                st.success("VERIFIED!")
-
-            else: st.error("NOT VERIFIED!")
-
-            st.info(show_ratio+show_threshold)
+            col1,col2,col3 = st.columns(3)
+            with col1: st.info(show_ratio+show_threshold)
+            with col2:
+                if self.verified: st.success("VERIFIED!")
+                else: st.error("NOT VERIFIED!")
+            with col3:
+                df['percentage_match'] = pd.to_numeric(df['Similarity'].str.rstrip('%'))
+                average_percentage = df['percentage_match'].mean()
+                st.info(f"Average Percentage Match: {average_percentage:.2f} %")

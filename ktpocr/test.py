@@ -122,6 +122,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '21-06-2017'
                 },
+            'mcd': {
+                'provinsi': 'DKI JAKARTA',
+                'kota_atau_kabupaten': 'JAKARTA BARAT',
+                'nik': '1271032612010001',
+                'nama': 'MICHAEL DAVID HANITIO',
+                'tempat_lahir': 'MEDAN',
+                'tanggal_lahir': '26-12-2001',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': 'A',
+                'alamat': 'GREEN GARDEN BLOK O 1/49',
+                'rt': '009',
+                'rw': '010',
+                'kelurahan_atau_desa': 'KEDOYA UTARA',
+                'kecamatan': 'KEBON JERUK',
+                'agama': 'KRISTEN',
+                'status_perkawinan': 'BELUM KAWIN',
+                'pekerjaan': 'PELAJAR/MAHASISWA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
             'mira': {
                 'provinsi': 'DKI JAKARTA',
                 'kota_atau_kabupaten': 'JAKARTA BARAT',
