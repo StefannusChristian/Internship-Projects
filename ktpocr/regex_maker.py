@@ -1,5 +1,6 @@
 import pandas as pd
 from web_scraper import JobScraper
+from cachetools import cached, TTLCache
 
 class RegexMaker:
     def __init__(self, dataframe: pd.DataFrame):
@@ -11,6 +12,7 @@ class RegexMaker:
         self.goldar_regex_pattern = "O|A|B|AB|-"
         self.agama_regex_pattern = "ISLAM|KRISTEN|KATOLIK|BUDHA|HINDU|KONGHUCHU"
         self.gender_regex_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE|LAKILAKI|LAKI"
+        self.status_perkawinan_pattern = "BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED"
         self.patterns_to_found = {
             "rtrw": ["RTRW", "RT/RW"],
             "kota_kabupaten": ["KOTA","KABUPATEN"],
@@ -34,6 +36,7 @@ class RegexMaker:
         all_jobs.append("PEKERJAAN LAINNYA")
         return self.make_regex_pattern(all_jobs)
 
+
     def make_regex_dict(self):
         self.regex_dict["provinsi"] = self.make_provinsi_regex()
         self.regex_dict["kota_kabupaten"] = self.make_kota_kabupaten_regex()
@@ -42,4 +45,5 @@ class RegexMaker:
         self.regex_dict["agama"] = self.agama_regex_pattern
         self.regex_dict["gender"] = self.gender_regex_pattern
         self.regex_dict["jobs"] = self.make_job_regex()
+        self.regex_dict["status_perkawinan"] = self.status_perkawinan_pattern
         return self.regex_dict
