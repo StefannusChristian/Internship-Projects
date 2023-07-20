@@ -7,7 +7,7 @@ class KTPInformation:
         self.TempatLahir = None
         self.TanggalLahir = None
         self.JenisKelamin = None
-        self.GolonganDarah = None
+        self.GolonganDarah = "-"
         self.Alamat = None
         self.RT = None
         self.RW = None

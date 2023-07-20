@@ -122,6 +122,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '21-06-2017'
                 },
+            'kirill': {
+                'provinsi': 'DKI JAKARTA',
+                'kota_atau_kabupaten': 'JAKARTA PUSAT',
+                'nik': '3372052106610006',
+                'nama': 'IR. JOKO WIDODO',
+                'tempat_lahir': 'SURAKARTA',
+                'tanggal_lahir': '21-06-1961',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': 'A',
+                'alamat': 'JL. TAMAN SUROPATI NO. 7',
+                'rt': '005',
+                'rw': '005',
+                'kelurahan_atau_desa': 'MENTENG',
+                'kecamatan': 'MENTENG',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'KAWIN',
+                'pekerjaan': 'GUBERNUR',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': '21-06-2017'
+                },
             'mcd': {
                 'provinsi': 'DKI JAKARTA',
                 'kota_atau_kabupaten': 'JAKARTA BARAT',

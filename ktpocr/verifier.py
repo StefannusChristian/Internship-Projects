@@ -5,7 +5,6 @@ class Verifier:
     def __init__(self, dataframe: pd.DataFrame):
         self.unique_pronvisi_column = dataframe["Provinsi"].unique()
         self.unique_kota_kabupaten_column = dataframe["DaerahTingkatDua"].unique()
-        self.unique_kecamatan_column = dataframe["Kecamatan"].unique()
         self.verifier_dict = {}
         self.jakarta_pattern = ["JAKARTA BARAT","JAKARTA PUSAT","JAKARTA TIMUR","JAKARTA SELATAN","JAKARTA UTARA"]
         self.goldar_pattern = "O|A|B|AB|-"
