@@ -71,7 +71,7 @@ class Test:
                 'tanggal_lahir': '24-01-1993',
                 'jenis_kelamin': 'LAKI-LAKI',
                 'golongan_darah': 'A',
-                'alamat': 'JLUNIB PERMA III NO 35',
+                'alamat': 'JLUNIB PERMA III NO 35 PERUMNAS UNIB',
                 'rt': '015',
                 'rw': '003',
                 'kelurahan_atau_desa': 'PEMATANG GUBERNUR',
