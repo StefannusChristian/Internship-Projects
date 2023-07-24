@@ -6,7 +6,6 @@ from kyc import KYC
 import streamlit as st
 
 class StreamLit:
-
     def __init__(self):
         self.kyc = KYC()
 
