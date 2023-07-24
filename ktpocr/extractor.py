@@ -38,7 +38,7 @@ class KTPOCR:
         self.image_name = None
         self.image_name_for_test = None
         self.tester = None
-        self.choice = self.showSelectBox()
+        self.choice = None
         self.verified = None
         self.threshold_num = None
         self.ocr_threshold = st.slider(label='OCR Threshold', min_value=0.5, max_value=1.0, step=0.05, value=0.8)
@@ -54,6 +54,8 @@ class KTPOCR:
             "nik" : r'\d+\s*',
             "tempat_tanggal_lahir": r'(?:.*\s)?([^0-9]+)\s(\d{2}-\d{2}-\d{4})'
         }
+        self.total_ktp_information = 18
+        self.checkbox = st.checkbox("Show All KTP")
 
     def set_page_title_and_icon(self): st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
@@ -137,16 +139,15 @@ class KTPOCR:
         return self.replace_letter_from_word_dict(word, word_dict)
 
     def extract(self, extracted_result:str, information:str):
-        lines = extracted_result.split("\n")
+        lines = self.compact(extracted_result.split("\n"))
         gender_pattern = self.verifier_maker["gender"].split("|")
         status_perkawinan_pattern = self.verifier_maker["status_perkawinan"].split("|")
         dates_list = [item for item in lines if re.search(self.regex_patterns['date'], item) and self.is_valid_date(self.add_dash_to_date(item))]
         if information == "default":
-            # st.warning(lines)
+            st.warning(lines)
             for idx,word in enumerate(lines):
                 info = word.split(" ")[0].strip()
                 if info in self.special_characters: info = word.split(" ")[1].strip()
-                # st.success(info)
 
                 #* EXTRACT PROVINSI
                 if self.find_string_similarity(info,"PROVINSI") >= self.jaro_winkler_threshold: self.extract_provinsi(word)
@@ -165,8 +166,13 @@ class KTPOCR:
                 #* EXTRACT TEMPAT TANGGAL LAHIR
                 if self.find_string_similarity(info,"TempatTgl") >= self.jaro_winkler_threshold: self.extract_tempat_tanggal_lahir(word)
 
-                #* EXTRACT DARAH AND JENIS KELAMIN
+                #* EXTRACT GOLONGAN DARAH AND JENIS KELAMIN
                 if self.find_string_similarity(info,"Jenis") >= self.jaro_winkler_threshold: self.extract_golongan_darah_and_jenis_kelamin(word)
+
+                #* EXTRACT GOLONGAN DARAH EDGE CASES
+                try:
+                    if re.search(self.verifier_maker['gender'], info)[0]: self.extract_golongan_darah_and_jenis_kelamin(word)
+                except: pass
 
                 #* EXTRACT ALAMAT
                 if self.find_string_similarity(info,"Alamat") >= self.jaro_winkler_threshold:
@@ -202,7 +208,6 @@ class KTPOCR:
 
             #* HANDLE EDGE CASES
             if any(value is None or (isinstance(value, str) and value.strip() == "") for value in self.result.__dict__.values()):
-                st.warning(lines)
                 for info in lines:
                     info = info.lstrip(":").lstrip()
                     #* HANDLE PEKERJAAN EDGE CASES
@@ -211,7 +216,7 @@ class KTPOCR:
                         if best_match and best_similarity >= self.tricky_case_threshold: self.result.Pekerjaan = best_match.strip()
 
                     #* HANDLE TEMPAT LAHIR AND TANGGAL LAHIR EDGE CASES
-                    if self.result.TempatLahir is None or self.result.TempatLahir.strip() == "" or self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "":
+                    if self.result.TempatLahir is None or self.result.TempatLahir.strip() == "" or self.find_string_similarity(self.result.TempatLahir,"TempatTgl") >= self.jaro_winkler_threshold or self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold:
                         check_tempat_lahir = info.split(" ")[0].strip()
                         best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kota_kabupaten"], check_tempat_lahir)
                         if best_match and best_similarity >= self.tricky_case_threshold: self.result.TempatLahir = check_tempat_lahir.strip()
@@ -292,17 +297,27 @@ class KTPOCR:
                     else: self.extract_nik(word, False)
                     break
 
+        #* HANDLE NAME EDGE CASES
+        if self.result.NIK is not None and (self.result.Nama is None or self.result.Nama.strip() == ""):
+            for idx,word in enumerate(lines):
+                try:
+                    if self.find_string_similarity(self.result.NIK, word) >= self.jaro_winkler_threshold:
+                        name = lines[idx+1]
+                        name = self.clean_semicolons_and_stripes(name)
+                        self.result.Nama = name.strip()
+                        break
+                except: pass
+
+    def compact(self, lst: list): return list(filter(None, lst))
+
     def is_valid_date(self, date_str: str):
         try:
             day, month, year = map(int, date_str.split('-'))
             if 1 <= day <= 31 and 1 <= month <= 12 and year > 0:
-                if (month in [4, 6, 9, 11] and day <= 30) or (month != 2 and day <= 31):
-                    return True
+                if (month in [4, 6, 9, 11] and day <= 30) or (month != 2 and day <= 31): return True
                 elif month == 2:
-                    if (year % 400 == 0) or (year % 4 == 0 and year % 100 != 0):
-                        return day <= 29
-                    else:
-                        return day <= 28
+                    if (year % 400 == 0) or (year % 4 == 0 and year % 100 != 0): return day <= 29
+                    else: return day <= 28
         except: pass
         return False
 
@@ -510,6 +525,7 @@ class KTPOCR:
     def extract_tempat_tanggal_lahir(self, word):
         try:
             word = word.split(" ")
+            st.error(word)
             tempat_lahir, tanggal_lahir = word[-2],word[-1]
             tempat_lahir = self.clean_semicolons_and_stripes(tempat_lahir)
             tempat_lahir = self.remove_dots(tempat_lahir)
@@ -544,19 +560,20 @@ class KTPOCR:
         df['Should Return'] = df['Should Return'].astype(str)
         df['Check'] = np.where(df.apply(lambda row: self.find_string_similarity(row['Value'], row['Should Return']) >= self.jaro_winkler_threshold, axis=1), '✅', '❌')
         df['Similarity'] = df.apply(lambda row: f"{self.find_string_similarity(row['Value'], row['Should Return']) * 100} %", axis=1)
-        # st.json(json_object)
         return df
 
     def verify_ocr(self, df: pd.DataFrame):
-        threshold = int(self.ocr_threshold*18)
+        threshold = int(self.ocr_threshold*self.total_ktp_information)
         check_counts = df['Check'].value_counts()
         num_correct = check_counts.get('✅', 0)
         if num_correct >= threshold: return True,num_correct,threshold
         else: return False,num_correct,threshold
 
+    def get_all_files(self): return os.listdir(self.base_path)
+
     def showSelectBox(self):
+        all_files = self.get_all_files()
         all_files = ["ktp_jokowi.png","ktp_handoko.png","ktp_febrina.png"]
-        # all_files = os.listdir(self.base_path)
         choice = st.selectbox("Select KTP File", all_files)
         return choice
 
@@ -599,50 +616,62 @@ class KTPOCR:
     @cached(cache)
     def make_verifier_dict(self): return self.verifier.make_verifier_dict()
 
+    def init(self, show_all_ktp: bool, image_path: str):
+        self.result.reset_values()
+        if show_all_ktp: self.file_path = self.base_path + image_path
+        else: self.file_path = self.base_path + self.choice
+
+        self.image = cv2.imread(self.file_path)
+        self.original_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        self.image_name = self.get_ktp_image_name(False)
+        self.image_name_for_test = self.get_ktp_image_name(True)
+        self.tester = Test(self.image_name_for_test)
+
+    def display_results(self):
+        st.header(self.image_name)
+        col1, col2 = st.columns(2)
+
+        # self.make_annotated_text("DATA","LABS","#4CB9A2")
+
+        with col2:
+            aspect_ratio = self.original_image.shape[1] / self.original_image.shape[0]
+            new_width = int(335 * aspect_ratio)
+            resized_original_image = cv2.resize(self.original_image, (new_width, 250))
+            resized_gray_image = cv2.resize(self.gray, (new_width, 250))
+            st.image(resized_original_image, use_column_width=True)
+            st.image(resized_gray_image, use_column_width=True)
+
+        self.preprocess_data_kode_wilayah_df()
+        self.verifier = Verifier(self.data_kode_wilayah_df)
+        self.verifier_maker = self.make_verifier_dict()
+
+        for information in self.informations: self.master_process(information)
+
+        df = self.make_dataframe()
+        self.verified,num_correct,self.threshold_num = self.verify_ocr(df)
+
+        with col1: st.dataframe(df,use_container_width=True,height=670)
+
+        show_ratio = f"{num_correct}/{self.total_ktp_information}"
+        show_threshold = f" Threshold: {self.threshold_num}"
+
+        col1,col2,col3 = st.columns(3)
+        with col1: st.info(show_ratio+show_threshold)
+        with col2:
+            if self.verified: st.success("VERIFIED!")
+            else: st.error("NOT VERIFIED!")
+        with col3:
+            df['percentage_match'] = pd.to_numeric(df['Similarity'].str.rstrip('%'))
+            average_percentage = df['percentage_match'].mean()
+            st.info(f"Average Percentage Match: {average_percentage:.2f} %")
+
     def run(self):
-        if self.choice:
-            self.file_path = self.base_path + self.choice
-            self.image = cv2.imread(self.file_path)
-            self.original_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
-            self.gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-            self.image_name = self.get_ktp_image_name(False)
-            self.image_name_for_test = self.get_ktp_image_name(True)
-            self.tester = Test(self.image_name_for_test)
-
-        if True:
-            st.header(self.image_name)
-            col1, col2 = st.columns(2)
-
-            self.make_annotated_text("DATA","LABS","#4CB9A2")
-
-            with col2:
-                aspect_ratio = self.original_image.shape[1] / self.original_image.shape[0]
-                new_width = int(335 * aspect_ratio)
-                resized_original_image = cv2.resize(self.original_image, (new_width, 250))
-                resized_gray_image = cv2.resize(self.gray, (new_width, 250))
-                st.image(resized_original_image, use_column_width=True)
-                st.image(resized_gray_image, use_column_width=True)
-
-            self.preprocess_data_kode_wilayah_df()
-            self.verifier = Verifier(self.data_kode_wilayah_df)
-            self.verifier_maker = self.make_verifier_dict()
-
-            for information in self.informations: self.master_process(information)
-
-            df = self.make_dataframe()
-            self.verified,num_correct,self.threshold_num = self.verify_ocr(df)
-
-            with col1: st.dataframe(df,use_container_width=True,height=670)
-
-            show_ratio = f"{num_correct}/18"
-            show_threshold = f" Threshold: {self.threshold_num}"
-
-            col1,col2,col3 = st.columns(3)
-            with col1: st.info(show_ratio+show_threshold)
-            with col2:
-                if self.verified: st.success("VERIFIED!")
-                else: st.error("NOT VERIFIED!")
-            with col3:
-                df['percentage_match'] = pd.to_numeric(df['Similarity'].str.rstrip('%'))
-                average_percentage = df['percentage_match'].mean()
-                st.info(f"Average Percentage Match: {average_percentage:.2f} %")
+        if self.checkbox:
+            for data in self.get_all_files():
+                self.init(True, data)
+                self.display_results()
+        else:
+            self.choice = self.showSelectBox()
+            if self.choice: self.init(False,"")
+            self.display_results()
