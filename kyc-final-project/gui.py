@@ -23,9 +23,9 @@ class GUI:
 
     def run(self):
         st.title("Know Your Customer Datalabs Internship Final Project")
-        column1, column2 = st.columns(2)
-        with column1: image1 = self.showUploadedFile("ktp_image_to_compare")
-        with column2: image2 = self.showUploadedFile("image_to_compare")
+        col1,col2 = st.columns(2)
+        with col1: image1 = self.showUploadedFile("Upload Your KTP Image")
+        with col2: image2 = st.camera_input("Take A Picture")
 
         verify_button = self.make_center_button("Verify")
         if verify_button: self.face_verifier.verify_face(image1, image2)
