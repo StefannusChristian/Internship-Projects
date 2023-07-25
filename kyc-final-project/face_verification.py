@@ -8,7 +8,7 @@ from keras_vggface.utils import preprocess_input  # Preprocessing utility for VG
 # Import modules for face recognition
 from scipy.spatial.distance import cosine  # SciPy for calculating cosine similarity
 from keras_vggface.vggface import VGGFace  # VGGFace model for face recognition
-
+from keras_vggface import models
 class FaceVerifier:
     #########################################################
     #                    Constructor                         #m

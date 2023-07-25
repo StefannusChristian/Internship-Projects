@@ -62,8 +62,8 @@ class Verifier:
         self.unique_kecamatan_column = dataframe["Kecamatan"].unique()
         self.verifier_dict = {}
         self.jakarta_pattern = ["JAKARTA BARAT","JAKARTA PUSAT","JAKARTA TIMUR","JAKARTA SELATAN","JAKARTA UTARA"]
-        self.goldar_pattern = "O|A|B|AB|-"
-        self.agama_pattern = ["ISLAM","KRISTEN","KATOLIK","BUDHA","HINDU","KONGHUCHU"]
+        self.goldar_pattern = r"AB[+-]?|O[+-]?|A[+-]?|B[+-]?|-"
+        self.agama_pattern = ["ISLAM","KRISTEN","KATOLIK","BUDHA","HINDU","KONGHUCHU","CHRISTIAN"]
         self.gender_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE|LAKILAKI|LAKI"
         self.status_perkawinan_pattern = "BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED"
 
@@ -74,21 +74,21 @@ class Verifier:
         self.verifier_dict["goldar"] = self.goldar_pattern
         self.verifier_dict["agama"] = self.agama_pattern
         self.verifier_dict["gender"] = self.gender_pattern
-        self.verifier_dict["jobs"] = ['BELUM/TIDAK BEKERJA', 'MENGURUS RUMAH TANGGA', 'PELAJAR/MAHASISWA', 'PENSIUNAN', 'PEWAGAI NEGERI SIPIL', 'TENTARA NASIONAL INDONESIA', 'KEPOLISISAN RI', 'PERDAGANGAN', 'PETANI/PEKEBUN', 'PETERNAK', 'NELAYAN/PERIKANAN', 'INDUSTRI', 'KONSTRUKSI', 'TRANSPORTASI', 'KARYAWAN SWASTA', 'KARYAWAN BUMN', 'KARYAWAN BUMD', 'KARYAWAN HONORER', 'BURUH HARIAN LEPAS', 'BURUH TANI/PERKEBUNAN', 'BURUH NELAYAN/PERIKANAN', 'BURUH PETERNAKAN', 'PEMBANTU RUMAH TANGGA', 'TUKANG CUKUR', 'TUKANG LISTRIK', 'TUKANG BATU', 'TUKANG KAYU', 'TUKANG SOL SEPATU', 'TUKANG LAS/PANDAI BESI', 'TUKANG JAHIT', 'TUKANG GIGI', 'PENATA RIAS', 'PENATA BUSANA', 'PENATA RAMBUT', 'MEKANIK', 'SENIMAN', 'TABIB', 'PARAJI', 'PERANCANG BUSANA', 'PENTERJEMAH', 'IMAM MASJID', 'PENDETA', 'PASTOR', 'WARTAWAN', 'USTADZ/MUBALIGH', 'JURU MASAK', 'PROMOTOR ACARA', 'ANGGOTA DPR-RI', 'ANGGOTA DPD', 'ANGGOTA BPK', 'PRESIDEN', 'WAKIL PRESIDEN', 'ANGGOTA MAHKAMAH KONSTITUSI', 'ANGGOTA KABINET/KEMENTERIAN', 'DUTA BESAR', 'GUBERNUR', 'WAKIL GUBERNUR', 'BUPATI', 'WAKIL BUPATI', 'WALIKOTA', 'WAKIL WALIKOTA', 'ANGGOTA DPRD PROVINSI', 'ANGGOTA DPRD KABUPATEN/KOTA', 'DOSEN', 'GURU', 'PILOT', 'PENGACARA', 'NOTARIS', 'ARSITEK', 'AKUNTAN', 'KONSULTAN', 'DOKTER', 'BIDAN', 'PERAWAT', 'APOTEKER', 'PSIKIATER/PSIKOLOG', 'PENYIAR TELEVISI', 'PENYIAR RADIO', 'PELAUT', 'PENELITI', 'SOPIR', 'PIALANG', 'PARANORMAL', 'PEDAGANG', 'PERANGKAT DESA', 'KEPALA DESA', 'BIARAWATI', 'WIRASWASTA','PEKERJAAN LAINNYA','PEGAWAI SWASTA']
+        self.verifier_dict["jobs"] = ['BELUM/TIDAK BEKERJA', 'MENGURUS RUMAH TANGGA', 'PELAJAR/MAHASISWA', 'PENSIUNAN', 'PEWAGAI NEGERI SIPIL', 'TENTARA NASIONAL INDONESIA', 'KEPOLISISAN RI', 'PERDAGANGAN', 'PETANI/PEKEBUN', 'PETERNAK', 'NELAYAN/PERIKANAN', 'INDUSTRI', 'KONSTRUKSI', 'TRANSPORTASI', 'KARYAWAN SWASTA', 'KARYAWAN BUMN', 'KARYAWAN BUMD', 'KARYAWAN HONORER', 'BURUH HARIAN LEPAS', 'BURUH TANI/PERKEBUNAN', 'BURUH NELAYAN/PERIKANAN', 'BURUH PETERNAKAN', 'PEMBANTU RUMAH TANGGA', 'TUKANG CUKUR', 'TUKANG LISTRIK', 'TUKANG BATU', 'TUKANG KAYU', 'TUKANG SOL SEPATU', 'TUKANG LAS/PANDAI BESI', 'TUKANG JAHIT', 'TUKANG GIGI', 'PENATA RIAS', 'PENATA BUSANA', 'PENATA RAMBUT', 'MEKANIK', 'SENIMAN', 'TABIB', 'PARAJI', 'PERANCANG BUSANA', 'PENTERJEMAH', 'IMAM MASJID', 'PENDETA', 'PASTOR', 'WARTAWAN', 'USTADZ/MUBALIGH', 'JURU MASAK', 'PROMOTOR ACARA', 'ANGGOTA DPR-RI', 'ANGGOTA DPD', 'ANGGOTA BPK', 'PRESIDEN', 'WAKIL PRESIDEN', 'ANGGOTA MAHKAMAH KONSTITUSI', 'ANGGOTA KABINET/KEMENTERIAN', 'DUTA BESAR', 'GUBERNUR', 'WAKIL GUBERNUR', 'BUPATI', 'WAKIL BUPATI', 'WALIKOTA', 'WAKIL WALIKOTA', 'ANGGOTA DPRD PROVINSI', 'ANGGOTA DPRD KABUPATEN/KOTA', 'DOSEN', 'GURU', 'PILOT', 'PENGACARA', 'NOTARIS', 'ARSITEK', 'AKUNTAN', 'KONSULTAN', 'DOKTER', 'BIDAN', 'PERAWAT', 'APOTEKER', 'PSIKIATER/PSIKOLOG', 'PENYIAR TELEVISI', 'PENYIAR RADIO', 'PELAUT', 'PENELITI', 'SOPIR', 'PIALANG', 'PARANORMAL', 'PEDAGANG', 'PERANGKAT DESA', 'KEPALA DESA', 'BIARAWATI', 'WIRASWASTA','PEKERJAAN LAINNYA','PEGAWAI SWASTA','OTHERS']
         self.verifier_dict["status_perkawinan"] = self.status_perkawinan_pattern
         self.verifier_dict["kecamatan"] = self.unique_kecamatan_column
         return self.verifier_dict
 
 class KTPOCR:
     def __init__(self):
-        self.page_title = "KTP INDONESIA OCR"
+        self.page_title = "KTP OCR DEMO"
         self.page_icon = "./icon_image.png"
         self.set_page_title_and_icon()
         self.hide_side_menu = False
         self.hide_footer = True
         self.hide_styles(self.hide_side_menu,self.hide_footer)
         self.pytesseract_path = r"C:\Users\chris\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
-        self.base_path = "./dataset/"
+        self.base_path = "./test_ktp_images/"
         self.file_path = None
         self.image = None
         self.original_image = None
@@ -106,7 +106,7 @@ class KTPOCR:
         self.verified = None
         self.threshold_num = None
         self.ocr_threshold = st.slider(label='OCR Threshold', min_value=0.5, max_value=1.0, step=0.05, value=0.8)
-        self.data_kode_wilayah_df = pd.read_excel("./data_kode_wilayah.xlsx")
+        self.data_kode_wilayah_df = pd.read_excel("./data/data_kode_wilayah.xlsx")
         self.verifier = None
         self.verifier_maker = None
         self.jaro_winkler_threshold = 0.8
@@ -119,7 +119,7 @@ class KTPOCR:
             "tempat_tanggal_lahir": r'(?:[A-Z][A-Za-z.-]+\s)?(?:\d{2}-\d{2}-\d{4}|\d{2}\d{2}\d{2,4})'
         }
         self.total_ktp_information = 18
-        self.checkbox = st.checkbox("Show All KTP")
+        self.checkbox = st.checkbox("Show All KTP",value=True)
 
     def set_page_title_and_icon(self): st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
@@ -205,6 +205,7 @@ class KTPOCR:
     def extract(self, extracted_result:str, information:str):
         lines = self.compact(extracted_result.split("\n"))
         if information == "default":
+            st.warning(lines)
             gender_pattern = self.verifier_maker["gender"].split("|")
             status_perkawinan_pattern = self.verifier_maker["status_perkawinan"].split("|")
             dates_list = [item for item in lines if re.search(self.regex_patterns['date'], item) and self.is_valid_date(self.add_dash_to_date(item))]
@@ -283,7 +284,7 @@ class KTPOCR:
                 if self.find_string_similarity(info,"Berlaku") >= self.jaro_winkler_threshold: self.extract_berlaku_hingga(word)
 
             #* HANDLE EDGE CASES
-            if any(value is None or (isinstance(value, str) and value.strip() == "") for value in self.result.__dict__.values()):
+            if any(value is None or (isinstance(value, str) and value.strip() == "") for value in self.result.__dict__.values()) or (isinstance(self.result.Kewarganegaraan, str) and len(self.result.Kewarganegaraan) < 3) or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3) or (isinstance(self.result.KelurahanAtauDesa, str) and len(self.result.KelurahanAtauDesa) < 3) or (isinstance(self.result.StatusPerkawinan, str) and len(self.result.StatusPerkawinan) < 5) or (isinstance(self.result.BerlakuHingga, str) and len(self.result.BerlakuHingga) < 5):
                 for info in lines:
                     info = info.lstrip(":").lstrip()
 
@@ -325,6 +326,7 @@ class KTPOCR:
                             try:
                                 rt = info[0].strip()
                                 rw = info[1].strip()
+                                if len(rt) < 3 or len(rw) < 3: rt,rw = self.process_rt_rw(info)
                                 rt = self.clean_semicolons_and_stripes(rt)
                                 self.result.RT = rt
                                 self.result.RW = rw
@@ -354,7 +356,7 @@ class KTPOCR:
 
                     #* HANDLE ALAMAT EDGE CASES
                     if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Kecamatan) < 7)):
-                        if any(substring in info for substring in ["BLOK", "JL"]):
+                        if any(substring in info for substring in ["BLOK", "JL","1L"]):
                             alamat = self.remove_semicolons(info)
                             self.result.Alamat = alamat.strip()
                             is_alamat_solved = True
@@ -403,6 +405,7 @@ class KTPOCR:
                     if self.find_string_similarity(self.result.NIK, word) >= self.jaro_winkler_threshold:
                         name = lines[idx+1]
                         name = self.clean_semicolons_and_stripes(name)
+                        name = self.remove_dots(name)
                         self.result.Nama = name.strip()
                         break
                 except: pass
@@ -520,6 +523,17 @@ class KTPOCR:
             if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Pekerjaan = best_match.strip()
         except: self.result.Pekerjaan = None
 
+    def process_rt_rw(self, digits: str):
+        if len(digits) == 6:
+            rt = digits[:len(digits)//2]
+            rw = digits[len(digits)//2:]
+        else:
+            matches = re.findall(r'0(\w{2})', digits)
+            rt = "0"+matches[0]
+            rw = "0"+matches[1]
+
+        return rt.strip(),rw.strip()
+
     def extract_rt_rw(self, word):
         rtrw = word.split(" ")[0].strip()
         try:
@@ -528,13 +542,8 @@ class KTPOCR:
                 word = pattern.sub(" ", word).strip()
                 digits = self.remove_all_letters(word, False)
 
-                if digits:
-                    if len(digits) == 6:
-                        rt = digits[:len(digits)//2]
-                        rw = digits[len(digits)//2:]
-                    else:
-                        rt = digits[:3]
-                        rw = digits[-3:]
+                if digits: rt,rw = self.process_rt_rw(digits)
+
                 else:
                     rt = None
                     rw = None
@@ -552,8 +561,9 @@ class KTPOCR:
         try:
             self.result.JenisKelamin = re.search(self.verifier_maker['gender'], word)[0]
             if ":" in word: word = word.split(':')
+            word = self.compact(word)
             goldar = word[-1]
-            if goldar == "Q": goldar = "O"
+            if goldar == "Q" or goldar == "6" or goldar == "0": goldar = "O"
             self.result.GolonganDarah = re.search(self.verifier_maker['goldar'], goldar)[0]
         except: self.result.GolonganDarah = "-"
 
@@ -586,7 +596,7 @@ class KTPOCR:
             pattern_list = self.verifier_maker["provinsi"]
             best_match, best_similarity = self.find_best_match_from_verifier_pattern(pattern_list, provinsi)
 
-            if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Provinsi = best_match.strip()
+            if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Provinsi = ("PROVINSI "+best_match).strip()
             else: self.result.Provinsi = None
         except: self.result.Provinsi = None
 
@@ -612,12 +622,15 @@ class KTPOCR:
                 if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.KotaAtauKabupaten = word[0] + " "+best_match.strip()
             except: self.result.KotaAtauKabupaten = None
 
+    def remove_all_digits(self, text: str): return re.sub(r'\d', '', text)
+
     def extract_name(self, word, extra_name: str):
         try:
             word = word.replace("Nama","")
             name = self.clean_semicolons_and_stripes(word)
-            if self.find_string_similarity(extra_name, "Tempat/TglLahir") < 0.6:
-                name += " "+extra_name
+            if self.find_string_similarity(extra_name, "Tempat/TglLahir") < 0.6: name += " "+extra_name
+            name = self.remove_all_digits(name)
+            name = self.remove_dots(name)
             self.result.Nama = name.strip()
         except: self.result.Nama = None
 
@@ -657,7 +670,7 @@ class KTPOCR:
         df['Value'] = df['Value'].astype(str)
         df['Should Return'] = df['Should Return'].astype(str)
         df['Check'] = np.where(df.apply(lambda row: self.find_string_similarity(row['Value'], row['Should Return']) >= self.jaro_winkler_threshold, axis=1), '✅', '❌')
-        df['Similarity'] = df.apply(lambda row: f"{self.find_string_similarity(row['Value'], row['Should Return']) * 100} %", axis=1)
+        df['Similarity'] = df.apply(lambda row: f"{self.find_string_similarity(row['Value'], row['Should Return']) * 100:.0f}%", axis=1)
         return df
 
     def verify_ocr(self, df: pd.DataFrame):
@@ -763,7 +776,7 @@ class KTPOCR:
         with col3:
             df['percentage_match'] = pd.to_numeric(df['Similarity'].str.rstrip('%'))
             average_percentage = df['percentage_match'].mean()
-            st.info(f"Average Percentage Match: {average_percentage:.2f} %")
+            st.info(f"Average Percentage Match: {average_percentage:.2f}%")
 
     def run(self):
         if self.checkbox:

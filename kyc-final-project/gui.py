@@ -10,7 +10,8 @@ class GUI:
         self.face_verifier = FaceVerifier()
 
     def showUploadedFile(self, key):
-        uploaded_file = st.file_uploader("Choose File", type=["jpg", "png"], key=key)
+        valid_image_extensions = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "svg", "ico", "raw"]
+        uploaded_file = st.file_uploader("Upload KTP Image", type=valid_image_extensions, key=key)
         return uploaded_file
 
     def make_center_button(self, button_text):

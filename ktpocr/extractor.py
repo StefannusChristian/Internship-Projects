@@ -141,6 +141,7 @@ class KTPOCR:
     def extract(self, extracted_result:str, information:str):
         lines = self.compact(extracted_result.split("\n"))
         if information == "default":
+            st.warning(lines)
             gender_pattern = self.verifier_maker["gender"].split("|")
             status_perkawinan_pattern = self.verifier_maker["status_perkawinan"].split("|")
             dates_list = [item for item in lines if re.search(self.regex_patterns['date'], item) and self.is_valid_date(self.add_dash_to_date(item))]

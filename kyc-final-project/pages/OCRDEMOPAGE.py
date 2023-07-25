@@ -1,2 +1,4 @@
-import streamlit as st
-st.title("KTP OCR DEMO")
+from ocr import KTPOCR
+
+ocr = KTPOCR()
+ocr.run()
