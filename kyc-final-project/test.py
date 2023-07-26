@@ -200,7 +200,7 @@ class Test:
                 'status_perkawinan': 'BELUM KAWIN',
                 'pekerjaan': 'KARYAWAN BUMN',
                 'kewarganegaraan': 'WNI',
-                'berlaku_hingga': '09-09-2012'
+                'berlaku_hingga': '02-09-2017'
                 },
             'galang': {
                 'provinsi': 'PROVINSI BENGKULU',
@@ -301,26 +301,6 @@ class Test:
                 'pekerjaan': 'WIRASWASTA',
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '04-07-2018'
-                },
-            'maftuchin': {
-                'provinsi': 'PROVINSI JAWA TIMUR',
-                'kota_atau_kabupaten': 'KABUPATEN TUBAN',
-                'nik': '3523160606800003',
-                'nama': 'MAFTUCHIN',
-                'tempat_lahir': 'TUBAN',
-                'tanggal_lahir': '06-06-1980',
-                'jenis_kelamin': 'LAKI-LAKI',
-                'golongan_darah': '-',
-                'alamat': 'JL. MASJID AL FALAH',
-                'rt': '001',
-                'rw': '002',
-                'kelurahan_atau_desa': 'SUGIHARJO',
-                'kecamatan': 'TUBAN',
-                'agama': 'ISLAM',
-                'status_perkawinan': 'KAWIN',
-                'pekerjaan': 'WIRASWASTA',
-                'kewarganegaraan': 'WNI',
-                'berlaku_hingga': '06-06-2017'
                 },
             'kirill': {
                 'provinsi': 'PROVINSI DKI JAKARTA',

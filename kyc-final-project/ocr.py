@@ -62,7 +62,7 @@ class Verifier:
         self.unique_kecamatan_column = dataframe["Kecamatan"].unique()
         self.verifier_dict = {}
         self.jakarta_pattern = ["JAKARTA BARAT","JAKARTA PUSAT","JAKARTA TIMUR","JAKARTA SELATAN","JAKARTA UTARA"]
-        self.goldar_pattern = r"AB[+-]?|O[+-]?|A[+-]?|B[+-]?|-"
+        self.goldar_pattern = r"AB[-+]?|A[-+]?|B[-+]?|O[-+]?"
         self.agama_pattern = ["ISLAM","KRISTEN","KATOLIK","BUDHA","HINDU","KONGHUCHU","CHRISTIAN"]
         self.gender_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE|LAKILAKI|LAKI"
         self.status_perkawinan_pattern = "BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED"
@@ -114,9 +114,9 @@ class KTPOCR:
         self.preprocessed = False
         self.special_characters = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~']
         self.regex_patterns = {
-            "date": r'(\d{2})[/-]?(\d{2})[/-]?(\d{4})',
+            "date": r'(\d{2})[/-]?(\d{2})[/-]?\s?(\d{4})',
             "nik" : r'\d+\s*',
-            "tempat_tanggal_lahir": r'(?:[A-Z][A-Za-z.-]+\s)?(?:\d{2}-\d{2}-\d{4}|\d{2}\d{2}\d{2,4})'
+            "tempat_tanggal_lahir": r'(?:[A-Z][A-Za-z.-]+\s)?(?:\d{2}-\d{2}(?:\s\d{4})?|\d{2}\d{2}(?:\s\d{2,4})?)',
         }
         self.total_ktp_information = 18
         self.checkbox = st.checkbox("Show All KTP",value=True)
@@ -210,17 +210,22 @@ class KTPOCR:
             status_perkawinan_pattern = self.verifier_maker["status_perkawinan"].split("|")
             dates_list = [item for item in lines if re.search(self.regex_patterns['date'], item) and self.is_valid_date(self.add_dash_to_date(item))]
 
+            #* EDGE CASES VARIABLE
             is_tempat_lahir_solved = False
             is_job_solved = False
             is_kewarganegaran_solved = False
             is_agama_solved = False
             is_rt_rw_solved = False
-            is_kecamatan_kelurahan_desa_solved = False
+            is_kecamatan_solved = False
             is_kelurahan_atau_desa_solved = False
             is_alamat_solved = False
             is_jenis_kelamin_solved = False
             is_status_perkawinan_solved = False
             is_berlaku_hingga_solved = False
+            is_tanggal_lahir_solved = False
+
+            #* NORMAL CASES VARIABLE
+            is_name_extracted = False
 
             for idx,word in enumerate(lines):
                 info = word.split(" ")[0].strip()
@@ -236,14 +241,15 @@ class KTPOCR:
                 if self.find_string_similarity(info,"JAKARTA") >= self.jaro_winkler_threshold: self.extract_kota_kabupaten(word,True)
 
                 #* EXTRACT NAMA
-                if self.find_string_similarity(info,"Nama") >= self.jaro_winkler_threshold:
+                if not is_name_extracted and self.find_string_similarity(info,"Nama") >= self.jaro_winkler_threshold:
                     extra_name = lines[idx+1]
                     self.extract_name(word, extra_name)
+                    is_name_extracted = True
 
                 #* EXTRACT TEMPAT TANGGAL LAHIR
                 if self.find_string_similarity(info,"TempatTgl") >= self.jaro_winkler_threshold: self.extract_tempat_tanggal_lahir(word)
 
-                #* EXTRACT GOLONGAN DARAH AND JENIS KELAMIN
+                #* EXTRACT GOLONGAN DARAH AND JENIS
                 if self.find_string_similarity(info,"Jenis") >= self.jaro_winkler_threshold: self.extract_golongan_darah_and_jenis_kelamin(word)
 
                 #* EXTRACT GOLONGAN DARAH EDGE CASES
@@ -290,10 +296,14 @@ class KTPOCR:
 
                     #* HANDLE PEKERJAAN EDGE CASES
                     if not is_job_solved and (self.result.Pekerjaan is None or self.result.Pekerjaan.strip() == ""):
-                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["jobs"], info)
-                        if best_match and best_similarity >= self.tricky_case_threshold:
-                            self.result.Pekerjaan = best_match.strip()
-                            is_job_solved = True
+                        try:
+                            pekerjaan = self.clean_semicolons_and_stripes(info)
+                            pekerjaan = pekerjaan.split(" ")[0].strip()
+                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["jobs"], pekerjaan)
+                            if best_match and best_similarity >= self.tricky_case_threshold:
+                                self.result.Pekerjaan = best_match.strip()
+                                is_job_solved = True
+                        except: pass
 
                     #* HANDLE TEMPAT LAHIR AND TANGGAL LAHIR EDGE CASES
                     if not is_tempat_lahir_solved and (self.result.TempatLahir is None or self.result.TempatLahir.strip() == "" or self.find_string_similarity(self.result.TempatLahir,"TempatTgl") >= self.jaro_winkler_threshold or self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold):
@@ -302,9 +312,19 @@ class KTPOCR:
                             if matches:
                                 tempat_lahir, tanggal_lahir = matches.split(" ")
                                 tempat_lahir = self.remove_dots(tempat_lahir)
-                                self.result.TempatLahir = tempat_lahir.strip()
-                                self.result.TanggalLahir = tanggal_lahir.strip()
+                                if (self.result.TempatLahir is None or self.result.TempatLahir.strip() == ""): self.result.TempatLahir = tempat_lahir.strip()
+                                if ((self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold) and len(tanggal_lahir) > 8):
+                                    self.result.TanggalLahir = tanggal_lahir.strip()
                                 is_tempat_lahir_solved = True
+                        except: pass
+
+                    #* HANDLE TANGGAL LAHIR EDGE CASES
+                    if not is_tanggal_lahir_solved and (self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold):
+                        try:
+                            matches = re.search(self.regex_patterns["date"], info.strip())[0]
+                            if self.find_string_similarity(matches,self.result.NIK) < 0.75:
+                                self.result.TanggalLahir = matches.strip()
+                                is_tanggal_lahir_solved = True
                         except: pass
 
                     #* HANDLE KEWARGANEGARAAN EDGE CASES
@@ -335,15 +355,6 @@ class KTPOCR:
                                 self.result.RT = None
                                 self.result.RW = None
 
-                    #* HANDLE KECAMATAN EDGE CASES AND KELURAHAN ATAU DESA
-                    if not is_kecamatan_kelurahan_desa_solved and (self.result.Kecamatan is None or self.result.Kecamatan.strip() == "" or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3)):
-                        try:
-                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kecamatan"], info)
-                            if best_match and best_similarity >= self.tricky_case_threshold:
-                                self.result.Kecamatan = best_match.strip()
-                                self.result.KelurahanAtauDesa = best_match.strip()
-                                is_kecamatan_kelurahan_desa_solved = True
-                        except: pass
 
                     #* HANDLE KELURAHAN ATAU DESA EDGE CASES
                     if not is_kelurahan_atau_desa_solved and (self.result.KelurahanAtauDesa is None or self.result.KelurahanAtauDesa.strip() == "" or (isinstance(self.result.KelurahanAtauDesa, str) and len(self.result.KelurahanAtauDesa) < 3)):
@@ -354,10 +365,19 @@ class KTPOCR:
                                 is_kelurahan_atau_desa_solved = True
                         except: pass
 
+                    #* HANDLE KECAMATAN EDGE CASES
+                    if not is_kecamatan_solved and (self.result.Kecamatan is None or self.result.Kecamatan.strip() == "" or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3)):
+                        try:
+                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kecamatan"], info)
+                            if best_match and best_similarity >= self.tricky_case_threshold:
+                                self.result.Kecamatan = best_match.strip()
+                                is_kecamatan_solved = True
+                        except: pass
+
                     #* HANDLE ALAMAT EDGE CASES
                     if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Kecamatan) < 7)):
-                        if any(substring in info for substring in ["BLOK", "JL","1L"]):
-                            alamat = self.remove_semicolons(info)
+                        if any(substring in info for substring in ["BLOK", "JL","1L","NO"]):
+                            alamat = self.clean_semicolons_and_stripes(info)
                             self.result.Alamat = alamat.strip()
                             is_alamat_solved = True
 
@@ -404,8 +424,7 @@ class KTPOCR:
                 try:
                     if self.find_string_similarity(self.result.NIK, word) >= self.jaro_winkler_threshold:
                         name = lines[idx+1]
-                        name = self.clean_semicolons_and_stripes(name)
-                        name = self.remove_dots(name)
+                        name = self.clean_name(name)
                         self.result.Nama = name.strip()
                         break
                 except: pass
@@ -559,13 +578,20 @@ class KTPOCR:
 
     def extract_golongan_darah_and_jenis_kelamin(self, word):
         try:
-            self.result.JenisKelamin = re.search(self.verifier_maker['gender'], word)[0]
+            if word[0] == ":": word = word.replace(":", " ")
+            gender_match = re.search(self.verifier_maker['gender'], word)
+            if gender_match: self.result.JenisKelamin = gender_match.group()
             if ":" in word: word = word.split(':')
+            else: word = word.split(" ")
             word = self.compact(word)
-            goldar = word[-1]
+            if word[-1].islower(): word.pop()
+            goldar = word[-1].strip()
             if goldar == "Q" or goldar == "6" or goldar == "0": goldar = "O"
-            self.result.GolonganDarah = re.search(self.verifier_maker['goldar'], goldar)[0]
-        except: self.result.GolonganDarah = "-"
+            goldar_match = re.search(self.verifier_maker['goldar'], goldar)
+            if goldar_match: self.result.GolonganDarah = goldar_match.group().strip()
+        except:
+            st.error("ERROR")
+            self.result.GolonganDarah = "-"
 
     def extract_agama(self, word):
         try:
@@ -624,29 +650,48 @@ class KTPOCR:
 
     def remove_all_digits(self, text: str): return re.sub(r'\d', '', text)
 
+    def clean_name(self, name: str):
+        name = self.clean_semicolons_and_stripes(name)
+        name = self.remove_all_digits(name)
+        name = self.remove_dots(name)
+        return name
+
     def extract_name(self, word, extra_name: str):
         try:
-            word = word.replace("Nama","")
-            name = self.clean_semicolons_and_stripes(word)
+            word = word.split(" ")
+            if ':' in word: word.remove(":")
+            word = self.compact(word)
+            if self.find_string_similarity(word[0].strip(),"Nama") >= self.jaro_winkler_threshold: word.remove(word[0])
+            name = " ".join(word)
             if self.find_string_similarity(extra_name, "Tempat/TglLahir") < 0.6: name += " "+extra_name
-            name = self.remove_all_digits(name)
-            name = self.remove_dots(name)
+            name = self.clean_name(name)
             self.result.Nama = name.strip()
         except: self.result.Nama = None
+
+    def has_no_digits(strings_list): return not any(char.isdigit() for string in strings_list for char in string)
 
     def extract_tempat_tanggal_lahir(self, word):
         try:
             word = word.split(" ")
+            word = self.compact(word)
+            if len(word[-1]) < 3: word.pop()
+            word = [i for i in word if self.find_string_similarity(i, "TempatTgl") < self.jaro_winkler_threshold and self.find_string_similarity(i, "Lahir") < self.jaro_winkler_threshold]
             tempat_lahir, tanggal_lahir = word[-2],word[-1]
+            if not tempat_lahir.isalpha() or len(tempat_lahir) < 3:
+                for i in range (len(word)-1,-1,-1):
+                    if word[i].isalpha():
+                        tempat_lahir = word[i]
+                        tanggal_lahir = "-".join(word[i+1:])
+                        break
             tempat_lahir = self.clean_semicolons_and_stripes(tempat_lahir)
             tempat_lahir = self.remove_dots(tempat_lahir)
-            if not tempat_lahir.isalpha():
-                tempat_lahir = word[-4]
-                tanggal_lahir = "-".join(word[-3:])
+            tempat_lahir = self.remove_all_digits(tempat_lahir)
             self.result.TanggalLahir = tanggal_lahir.strip()
             self.result.TempatLahir = tempat_lahir.strip()
 
-        except: self.result.TempatLahir = None
+        except:
+            st.error("MASUK SINI")
+            self.result.TempatLahir = None
 
     def master_process(self, information: str):
         raw_text = self.process(information)
@@ -684,8 +729,6 @@ class KTPOCR:
 
     def showSelectBox(self):
         all_files = self.get_all_files()
-        #* KTP Files With Edge Cases
-        # all_files = ["ktp_handoko.png","ktp_jokowi.png","ktp_febrina.png"]
         choice = st.selectbox("Select KTP File", all_files)
         return choice
 
