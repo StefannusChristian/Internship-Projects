@@ -87,16 +87,12 @@ class KTPOCR:
         self.hide_footer = True
         self.hide_styles(self.hide_side_menu,self.hide_footer)
         self.pytesseract_path = r"C:\Users\chris\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
-        self.base_path = "../images/test_ktp_images/"
+        self.base_path = "../ktp_classification/ktp_images/valid_ktp/"
         self.file_path = None
         self.image = None
         self.original_image = None
         self.gray = None
-        self.threshold_values = {
-            'nik':110,
-            'default': 127
-        }
-        self.informations = ["nik","default"]
+        self.threshed_value = 127
         self.result = KTPInformation()
         self.image_name = None
         self.image_name_for_test = None
@@ -118,15 +114,14 @@ class KTPOCR:
             "tempat_tanggal_lahir": r'(?:[A-Z][A-Za-z.-]+\s)?(?:\d{2}-\d{2}(?:\s\d{4})?|\d{2}\d{2}(?:\s\d{2,4})?)',
         }
         self.total_ktp_information = 18
-        self.checkbox = st.checkbox("Show All KTP",value=True)
+        if is_demo: self.checkbox = st.checkbox("Show All KTP",value=True)
 
     def set_page_title_and_icon(self, is_demo: bool):
         if is_demo: st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
-    def process(self, information: str):
+    def process(self):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
-        if information == "nik": th, threshed = cv2.threshold(self.gray, self.threshold_values['nik'], 255, cv2.THRESH_TRUNC)
-        elif information == "default": th, threshed = cv2.threshold(self.gray, self.threshold_values['default'], 255, cv2.THRESH_TRUNC)
+        th, threshed = cv2.threshold(self.gray, self.threshed_value, 255, cv2.THRESH_TRUNC)
 
         raw_extracted_text = pytesseract.image_to_string((threshed), lang="ind")
         return self.clean_special_characters_text(raw_extracted_text), threshed
@@ -201,220 +196,225 @@ class KTPOCR:
         }
         return self.replace_letter_from_word_dict(word, word_dict)
 
-    def extract(self, extracted_result:str, information:str):
+    def extract(self, extracted_result:str):
         lines = self.compact(extracted_result.split("\n"))
-        if information == "default":
-            gender_pattern = self.verifier_maker["gender"].split("|")
-            status_perkawinan_pattern = self.verifier_maker["status_perkawinan"].split("|")
-            dates_list = [item for item in lines if re.search(self.regex_patterns['date'], item) and self.is_valid_date(self.add_dash_to_date(item))]
+        st.warning(lines)
+        gender_pattern = self.verifier_maker["gender"].split("|")
+        status_perkawinan_pattern = self.verifier_maker["status_perkawinan"].split("|")
+        dates_list = [item for item in lines if re.search(self.regex_patterns['date'], item) and self.is_valid_date(self.add_dash_to_date(item))]
 
-            #* EDGE CASES VARIABLE
-            is_tempat_lahir_solved = False
-            is_job_solved = False
-            is_kewarganegaran_solved = False
-            is_agama_solved = False
-            is_rt_rw_solved = False
-            is_kecamatan_solved = False
-            is_kelurahan_atau_desa_solved = False
-            is_alamat_solved = False
-            is_jenis_kelamin_solved = False
-            is_status_perkawinan_solved = False
-            is_berlaku_hingga_solved = False
-            is_tanggal_lahir_solved = False
+        #* EDGE CASES VARIABLE
+        is_tempat_lahir_solved = False
+        is_job_solved = False
+        is_kewarganegaran_solved = False
+        is_agama_solved = False
+        is_rt_rw_solved = False
+        is_kecamatan_solved = False
+        is_kelurahan_atau_desa_solved = False
+        is_alamat_solved = False
+        is_jenis_kelamin_solved = False
+        is_status_perkawinan_solved = False
+        is_berlaku_hingga_solved = False
+        is_tanggal_lahir_solved = False
 
-            #* NORMAL CASES VARIABLE
-            is_name_extracted = False
+        #* NORMAL CASES VARIABLE
+        is_name_extracted = False
+        is_nik_extracted = False
 
-            for idx,word in enumerate(lines):
-                info = word.split(" ")[0].strip()
-                if info in self.special_characters: info = word.split(" ")[1].strip()
+        for idx,word in enumerate(lines):
+            info = word.split(" ")[0].strip()
+            if info in self.special_characters: info = word.split(" ")[1].strip()
 
-                #* EXTRACT PROVINSI
-                if self.find_string_similarity(info,"PROVINSI") >= self.jaro_winkler_threshold: self.extract_provinsi(word)
-
-                #* EXTRACT KOTA KABUPATEN NON JAKARTA
-                if any(self.find_string_similarity(info, keyword) >= self.jaro_winkler_threshold for keyword in ["KOTA", "KABUPATEN"]): self.extract_kota_kabupaten(word, False)
-
-                #* EXTRACT KOTA KABUPATEN JAKARTA
-                if self.find_string_similarity(info,"JAKARTA") >= self.jaro_winkler_threshold: self.extract_kota_kabupaten(word,True)
-
-                #* EXTRACT NAMA
-                if not is_name_extracted and self.find_string_similarity(info,"Nama") >= self.jaro_winkler_threshold:
-                    extra_name = lines[idx+1]
-                    self.extract_name(word, extra_name)
-                    is_name_extracted = True
-
-                #* EXTRACT TEMPAT TANGGAL LAHIR
-                if self.find_string_similarity(info,"TempatTgl") >= self.jaro_winkler_threshold: self.extract_tempat_tanggal_lahir(word)
-
-                #* EXTRACT GOLONGAN DARAH AND JENIS
-                if self.find_string_similarity(info,"Jenis") >= self.jaro_winkler_threshold: self.extract_golongan_darah_and_jenis_kelamin(word)
-
-                #* EXTRACT GOLONGAN DARAH EDGE CASES
-                try:
-                    if re.search(self.verifier_maker['gender'], info)[0]: self.extract_golongan_darah_and_jenis_kelamin(word)
-                except: pass
-
-                #* EXTRACT ALAMAT
-                if self.find_string_similarity(info,"Alamat") >= self.jaro_winkler_threshold:
-                    extra_alamat = lines[idx+1]
-                    if self.find_string_similarity(extra_alamat.split(" ")[0], "Status") < self.jaro_winkler_threshold: self.extract_alamat(word, extra_alamat)
-
-                #* EXTRACT KECAMATAN
-                if self.find_string_similarity(info,"Kecamatan") >= self.jaro_winkler_threshold: self.extract_kecamatan(word)
-
-                #* EXTRACT KELURAHAN ATAU DESA
-                if self.find_string_similarity(info,"Kel/Desa") >= self.jaro_winkler_threshold: self.extract_kelurahan_atau_desa(word)
-
-                #* EXTRACT KEWARGANEGARAAN
-                if self.find_string_similarity(info,"Kewarganegaraan") >= self.jaro_winkler_threshold: self.extract_kewarganegaraan(word)
-
-                #* EXTRACT PEKERJAAN
-                if self.find_string_similarity(info,"Pekerjaan") >= self.jaro_winkler_threshold: self.extract_pekerjaan(word)
-
-                #* EXTRACT AGAMA
-                if self.find_string_similarity(info,"Agama") >= self.jaro_winkler_threshold: self.extract_agama(word)
-
-                #* EXTRACT STATUS PERKAWINAN
-                if self.find_string_similarity(info,"Status") >= self.jaro_winkler_threshold: self.extract_perkawinan(word)
-
-                #* EXTRACT RT/RW
-                if self.find_string_similarity(info,"RT/RW") >= self.jaro_winkler_threshold: self.extract_rt_rw(word)
-
-                #* EXTRACT BERLAKU HINGGA SEUMUR HIDUP
-                if self.find_string_similarity(info,"SEUMUR") >= self.jaro_winkler_threshold: self.result.BerlakuHingga = "SEUMUR HIDUP"
-
-                #* EXTRACT BERLAKU HINGGA
-                if self.find_string_similarity(info,"Berlaku") >= self.jaro_winkler_threshold: self.extract_berlaku_hingga(word)
-
-            #* HANDLE EDGE CASES
-            if any(value is None or (isinstance(value, str) and value.strip() == "") for value in self.result.__dict__.values()) or (isinstance(self.result.Kewarganegaraan, str) and len(self.result.Kewarganegaraan) < 3) or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3) or (isinstance(self.result.KelurahanAtauDesa, str) and len(self.result.KelurahanAtauDesa) < 3) or (isinstance(self.result.StatusPerkawinan, str) and len(self.result.StatusPerkawinan) < 5) or (isinstance(self.result.BerlakuHingga, str) and len(self.result.BerlakuHingga) < 5):
-                for info in lines:
-                    info = info.lstrip(":").lstrip()
-
-                    #* HANDLE PEKERJAAN EDGE CASES
-                    if not is_job_solved and (self.result.Pekerjaan is None or self.result.Pekerjaan.strip() == ""):
-                        try:
-                            pekerjaan = self.clean_semicolons_and_stripes(info)
-                            pekerjaan = pekerjaan.split(" ")[0].strip()
-                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["jobs"], pekerjaan)
-                            if best_match and best_similarity >= self.tricky_case_threshold:
-                                self.result.Pekerjaan = best_match.strip()
-                                is_job_solved = True
-                        except: pass
-
-                    #* HANDLE TEMPAT LAHIR AND TANGGAL LAHIR EDGE CASES
-                    if not is_tempat_lahir_solved and (self.result.TempatLahir is None or self.result.TempatLahir.strip() == "" or self.find_string_similarity(self.result.TempatLahir,"TempatTgl") >= self.jaro_winkler_threshold or self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold):
-                        try:
-                            matches = re.search(self.regex_patterns["tempat_tanggal_lahir"], info.strip())[0]
-                            if matches:
-                                tempat_lahir, tanggal_lahir = matches.split(" ")
-                                tempat_lahir = self.remove_dots(tempat_lahir)
-                                if (self.result.TempatLahir is None or self.result.TempatLahir.strip() == ""): self.result.TempatLahir = tempat_lahir.strip()
-                                if ((self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold) and len(tanggal_lahir) > 8):
-                                    self.result.TanggalLahir = tanggal_lahir.strip()
-                                is_tempat_lahir_solved = True
-                        except: pass
-
-                    #* HANDLE TANGGAL LAHIR EDGE CASES
-                    if not is_tanggal_lahir_solved and (self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold):
-                        try:
-                            matches = re.search(self.regex_patterns["date"], info.strip())[0]
-                            if self.find_string_similarity(matches,self.result.NIK) < 0.75:
-                                self.result.TanggalLahir = matches.strip()
-                                is_tanggal_lahir_solved = True
-                        except: pass
-
-                    #* HANDLE KEWARGANEGARAAN EDGE CASES
-                    if not is_kewarganegaran_solved and ((isinstance(self.result.Kewarganegaraan, str) and len(self.result.Kewarganegaraan) < 3) or self.result.Kewarganegaraan is None or self.result.Kewarganegaraan.strip() == ""):
-                        self.result.Kewarganegaraan = "WNI"
-                        is_kewarganegaran_solved = True
-
-                    #* HANDLE AGAMA EDGE CASES
-                    if not is_agama_solved and (self.result.Agama is None or self.result.Agama.strip() == ""):
-                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["agama"], info)
-                        if best_match and best_similarity >= self.tricky_case_threshold:
-                            self.result.Agama = best_match.strip()
-                            is_agama_solved = True
-
-                    #* HANDLE RT/RW EDGE CASES
-                    if not is_rt_rw_solved and (self.result.RT is None or self.result.RT.strip() == "" or self.result.RW is None or self.result.RW.strip() == ""):
-                        if info.count('0') >= 2 and len(info) < 12:
-                            if "/" in info: info = info.split('/')
-                            try:
-                                rt = info[0].strip()
-                                rw = info[1].strip()
-                                if len(rt) < 3 or len(rw) < 3: rt,rw = self.process_rt_rw(info)
-                                rt = self.clean_semicolons_and_stripes(rt)
-                                self.result.RT = rt
-                                self.result.RW = rw
-                                is_rt_rw_solved = True
-                            except:
-                                self.result.RT = None
-                                self.result.RW = None
-
-
-                    #* HANDLE KELURAHAN ATAU DESA EDGE CASES
-                    if not is_kelurahan_atau_desa_solved and (self.result.KelurahanAtauDesa is None or self.result.KelurahanAtauDesa.strip() == "" or (isinstance(self.result.KelurahanAtauDesa, str) and len(self.result.KelurahanAtauDesa) < 3)):
-                        try:
-                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kota_kabupaten"], info.strip())
-                            if best_match and best_similarity >= self.tricky_case_threshold:
-                                self.result.KelurahanAtauDesa = best_match.strip()
-                                is_kelurahan_atau_desa_solved = True
-                        except: pass
-
-                    #* HANDLE KECAMATAN EDGE CASES
-                    if not is_kecamatan_solved and (self.result.Kecamatan is None or self.result.Kecamatan.strip() == "" or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3)):
-                        try:
-                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kecamatan"], info)
-                            if best_match and best_similarity >= self.tricky_case_threshold:
-                                self.result.Kecamatan = best_match.strip()
-                                is_kecamatan_solved = True
-                        except: pass
-
-                    #* HANDLE ALAMAT EDGE CASES
-                    if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Kecamatan) < 7)):
-                        if any(substring in info for substring in ["BLOK", "JL","1L","NO"]):
-                            alamat = self.clean_semicolons_and_stripes(info)
-                            self.result.Alamat = alamat.strip()
-                            is_alamat_solved = True
-
-                    #* HANDLE JENIS KELAMIN EDGE CASES
-                    if not is_jenis_kelamin_solved and (self.result.JenisKelamin is None or self.result.JenisKelamin.strip() == ""):
-                        try:
-                            gender = info.split(" ")[0].strip()
-                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(gender_pattern, gender)
-                            if best_match and best_similarity >= self.tricky_case_threshold:
-                                self.result.JenisKelamin = best_match.strip()
-                                is_jenis_kelamin_solved = True
-                        except: pass
-
-                    #* HANDLE STATUS PERKAWINAN EDGE CASES
-                    if not is_status_perkawinan_solved and (self.result.StatusPerkawinan is None or self.result.StatusPerkawinan.strip() == "" or (isinstance(self.result.StatusPerkawinan, str) and len(self.result.StatusPerkawinan) < 5)):
-                        try:
-                            best_match, best_similarity = self.find_best_match_from_verifier_pattern(status_perkawinan_pattern, info.strip())
-                            if best_match and best_similarity >= self.tricky_case_threshold:
-                                self.result.StatusPerkawinan = best_match.strip()
-                                is_status_perkawinan_solved = True
-                        except: pass
-
-                    #* HANDLE BERLAKU HINGGA EDGE CASES
-                    if not is_berlaku_hingga_solved and (self.result.BerlakuHingga is None or self.result.BerlakuHingga.strip() == "" or (isinstance(self.result.BerlakuHingga, str) and len(self.result.BerlakuHingga) < 5)):
-                        try:
-                            berlaku_hingga = dates_list[1]
-                            berlaku_hingga = self.remove_all_letters(berlaku_hingga, True)
-                            self.result.BerlakuHingga = berlaku_hingga.strip()
-                            is_berlaku_hingga_solved = True
-                        except: pass
-
-        # Process NIK
-        elif information == "nik":
-            for word in lines:
+            if not is_nik_extracted:
                 match = re.search(self.regex_patterns["nik"], word)
                 if match:
                     if self.find_string_similarity(word, "NIK") >= self.jaro_winkler_threshold: self.extract_nik(word, True)
                     else: self.extract_nik(word, False)
-                    break
+                    is_nik_extracted = True
+
+            #* EXTRACT PROVINSI
+            if self.find_string_similarity(info,"PROVINSI") >= self.jaro_winkler_threshold: self.extract_provinsi(word)
+
+            #* EXTRACT KOTA KABUPATEN NON JAKARTA
+            if any(self.find_string_similarity(info, keyword) >= self.jaro_winkler_threshold for keyword in ["KOTA", "KABUPATEN"]): self.extract_kota_kabupaten(word, False)
+
+            #* EXTRACT KOTA KABUPATEN JAKARTA
+            if self.find_string_similarity(info,"JAKARTA") >= self.jaro_winkler_threshold: self.extract_kota_kabupaten(word,True)
+
+            #* EXTRACT NAMA
+            if not is_name_extracted and self.find_string_similarity(info,"Nama") >= self.jaro_winkler_threshold:
+                extra_name = lines[idx+1]
+                self.extract_name(word, extra_name)
+                is_name_extracted = True
+
+            #* EXTRACT TEMPAT TANGGAL LAHIR
+            if self.find_string_similarity(info,"TempatTgl") >= self.jaro_winkler_threshold: self.extract_tempat_tanggal_lahir(word)
+
+            #* EXTRACT GOLONGAN DARAH AND JENIS
+            if self.find_string_similarity(info,"Jenis") >= self.jaro_winkler_threshold: self.extract_golongan_darah_and_jenis_kelamin(word)
+
+            #* EXTRACT GOLONGAN DARAH EDGE CASES
+            try:
+                if re.search(self.verifier_maker['gender'], info)[0]: self.extract_golongan_darah_and_jenis_kelamin(word)
+            except: pass
+
+            #* EXTRACT ALAMAT
+            if self.find_string_similarity(info,"Alamat") >= self.jaro_winkler_threshold:
+                extra_alamat = lines[idx+1]
+                if self.find_string_similarity(extra_alamat.split(" ")[0], "Status") < self.jaro_winkler_threshold: self.extract_alamat(word, extra_alamat)
+
+            #* EXTRACT KECAMATAN
+            if self.find_string_similarity(info,"Kecamatan") >= self.jaro_winkler_threshold: self.extract_kecamatan(word)
+
+            #* EXTRACT KELURAHAN ATAU DESA
+            if self.find_string_similarity(info,"Kel/Desa") >= self.jaro_winkler_threshold: self.extract_kelurahan_atau_desa(word)
+
+            #* EXTRACT KEWARGANEGARAAN
+            if self.find_string_similarity(info,"Kewarganegaraan") >= self.jaro_winkler_threshold: self.extract_kewarganegaraan(word)
+
+            #* EXTRACT PEKERJAAN
+            if self.find_string_similarity(info,"Pekerjaan") >= self.jaro_winkler_threshold: self.extract_pekerjaan(word)
+
+            #* EXTRACT AGAMA
+            if self.find_string_similarity(info,"Agama") >= self.jaro_winkler_threshold: self.extract_agama(word)
+
+            #* EXTRACT STATUS PERKAWINAN
+            if self.find_string_similarity(info,"Status") >= self.jaro_winkler_threshold: self.extract_perkawinan(word)
+
+            #* EXTRACT RT/RW
+            if self.find_string_similarity(info,"RT/RW") >= self.jaro_winkler_threshold: self.extract_rt_rw(word)
+
+            #* EXTRACT BERLAKU HINGGA SEUMUR HIDUP
+            if self.find_string_similarity(info,"SEUMUR") >= self.jaro_winkler_threshold: self.result.BerlakuHingga = "SEUMUR HIDUP"
+
+            #* EXTRACT BERLAKU HINGGA
+            if self.find_string_similarity(info,"Berlaku") >= self.jaro_winkler_threshold: self.extract_berlaku_hingga(word)
+
+        #* HANDLE EDGE CASES
+        if any(value is None or (isinstance(value, str) and value.strip() == "") for value in self.result.__dict__.values()) or (isinstance(self.result.Kewarganegaraan, str) and len(self.result.Kewarganegaraan) < 3) or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3) or (isinstance(self.result.KelurahanAtauDesa, str) and len(self.result.KelurahanAtauDesa) < 3) or (isinstance(self.result.StatusPerkawinan, str) and len(self.result.StatusPerkawinan) < 5) or (isinstance(self.result.BerlakuHingga, str) and len(self.result.BerlakuHingga) < 5):
+            for info in lines:
+                info = info.lstrip(":").lstrip()
+                #* HANDLE PEKERJAAN EDGE CASES
+                if not is_job_solved and (self.result.Pekerjaan is None or self.result.Pekerjaan.strip() == ""):
+                    try:
+                        pekerjaan = self.clean_semicolons_and_stripes(info)
+                        # st.success(pekerjaan)
+                        # pekerjaan = pekerjaan.split(" ")[0].strip()
+                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["jobs"], pekerjaan)
+                        if best_match and best_similarity >= self.tricky_case_threshold:
+                            self.result.Pekerjaan = best_match.strip()
+                            is_job_solved = True
+                    except: pass
+
+                #* HANDLE TEMPAT LAHIR AND TANGGAL LAHIR EDGE CASES
+                if not is_tempat_lahir_solved and (self.result.TempatLahir is None or self.result.TempatLahir.strip() == "" or self.find_string_similarity(self.result.TempatLahir,"TempatTgl") >= self.jaro_winkler_threshold or self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold):
+                    try:
+                        matches = re.search(self.regex_patterns["tempat_tanggal_lahir"], info.strip())[0]
+                        if matches:
+                            tempat_lahir, tanggal_lahir = matches.split(" ")
+                            tempat_lahir = self.remove_dots(tempat_lahir)
+                            if (self.result.TempatLahir is None or self.result.TempatLahir.strip() == ""): self.result.TempatLahir = tempat_lahir.strip()
+                            if ((self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold) and len(tanggal_lahir) > 8):
+                                self.result.TanggalLahir = tanggal_lahir.strip()
+                            is_tempat_lahir_solved = True
+                    except: pass
+
+                #* HANDLE TANGGAL LAHIR EDGE CASES
+                if not is_tanggal_lahir_solved and (self.result.TanggalLahir is None or self.result.TanggalLahir.strip() == "" or self.find_string_similarity(self.result.TanggalLahir,"Lahir") >= self.jaro_winkler_threshold):
+                    try:
+                        matches = re.search(self.regex_patterns["date"], info.strip())[0]
+                        if self.find_string_similarity(matches,self.result.NIK) < 0.75:
+                            self.result.TanggalLahir = matches.strip()
+                            is_tanggal_lahir_solved = True
+                    except: pass
+
+                #* HANDLE KEWARGANEGARAAN EDGE CASES
+                if not is_kewarganegaran_solved and ((isinstance(self.result.Kewarganegaraan, str) and len(self.result.Kewarganegaraan) < 3) or self.result.Kewarganegaraan is None or self.result.Kewarganegaraan.strip() == ""):
+                    self.result.Kewarganegaraan = "WNI"
+                    is_kewarganegaran_solved = True
+
+                #* HANDLE AGAMA EDGE CASES
+                if not is_agama_solved and (self.result.Agama is None or self.result.Agama.strip() == ""):
+                    best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["agama"], info)
+                    if best_match and best_similarity >= self.tricky_case_threshold:
+                        self.result.Agama = best_match.strip()
+                        is_agama_solved = True
+
+                #* HANDLE RT/RW EDGE CASES
+                if not is_rt_rw_solved and (self.result.RT is None or self.result.RT.strip() == "" or self.result.RW is None or self.result.RW.strip() == ""):
+                    if self.find_string_similarity(info,"-/-") >= self.jaro_winkler_threshold:
+                        if '/' in info: info = info.split('/')
+                        rt,rw = info[0],info[-1]
+                        self.result.RT = rt.strip()
+                        self.result.RW = rw.strip()
+                        is_rt_rw_solved = True
+                    if info.count('0') >= 2 and len(info) < 12:
+                        if "/" in info: info = info.split('/')
+                        try:
+                            rt = info[0].strip()
+                            rw = info[1].strip()
+                            if len(rt) < 3 or len(rw) < 3: rt,rw = self.process_rt_rw(info)
+                            rt = self.clean_semicolons_and_stripes(rt)
+                            self.result.RT = rt
+                            self.result.RW = rw
+                            is_rt_rw_solved = True
+                        except:
+                            self.result.RT = None
+                            self.result.RW = None
+
+
+                #* HANDLE KELURAHAN ATAU DESA EDGE CASES
+                if not is_kelurahan_atau_desa_solved and (self.result.KelurahanAtauDesa is None or self.result.KelurahanAtauDesa.strip() == "" or (isinstance(self.result.KelurahanAtauDesa, str) and len(self.result.KelurahanAtauDesa) < 3)):
+                    try:
+                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kota_kabupaten"], info.strip())
+                        if best_match and best_similarity >= self.tricky_case_threshold:
+                            self.result.KelurahanAtauDesa = best_match.strip()
+                            is_kelurahan_atau_desa_solved = True
+                    except: pass
+
+                #* HANDLE KECAMATAN EDGE CASES
+                if not is_kecamatan_solved and (self.result.Kecamatan is None or self.result.Kecamatan.strip() == "" or (isinstance(self.result.Kecamatan, str) and len(self.result.Kecamatan) < 3)):
+                    try:
+                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["kecamatan"], info)
+                        if best_match and best_similarity >= self.tricky_case_threshold:
+                            self.result.Kecamatan = best_match.strip()
+                            is_kecamatan_solved = True
+                    except: pass
+
+                #* HANDLE ALAMAT EDGE CASES
+                if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Kecamatan) < 7)):
+                    if any(substring in info for substring in ["BLOK", "JL","1L","NO"]):
+                        alamat = self.clean_semicolons_and_stripes(info)
+                        self.result.Alamat = alamat.strip()
+                        is_alamat_solved = True
+
+                #* HANDLE JENIS KELAMIN EDGE CASES
+                if not is_jenis_kelamin_solved and (self.result.JenisKelamin is None or self.result.JenisKelamin.strip() == ""):
+                    try:
+                        gender = info.split(" ")[0].strip()
+                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(gender_pattern, gender)
+                        if best_match and best_similarity >= self.tricky_case_threshold:
+                            self.result.JenisKelamin = best_match.strip()
+                            is_jenis_kelamin_solved = True
+                    except: pass
+
+                #* HANDLE STATUS PERKAWINAN EDGE CASES
+                if not is_status_perkawinan_solved and (self.result.StatusPerkawinan is None or self.result.StatusPerkawinan.strip() == "" or (isinstance(self.result.StatusPerkawinan, str) and len(self.result.StatusPerkawinan) < 5)):
+                    try:
+                        best_match, best_similarity = self.find_best_match_from_verifier_pattern(status_perkawinan_pattern, info.strip())
+                        if best_match and best_similarity >= self.tricky_case_threshold:
+                            self.result.StatusPerkawinan = best_match.strip()
+                            is_status_perkawinan_solved = True
+                    except: pass
+
+                #* HANDLE BERLAKU HINGGA EDGE CASES
+                if not is_berlaku_hingga_solved and (self.result.BerlakuHingga is None or self.result.BerlakuHingga.strip() == "" or (isinstance(self.result.BerlakuHingga, str) and len(self.result.BerlakuHingga) < 5)):
+                    try:
+                        berlaku_hingga = dates_list[1]
+                        berlaku_hingga = self.remove_all_letters(berlaku_hingga, True)
+                        self.result.BerlakuHingga = berlaku_hingga.strip()
+                        is_berlaku_hingga_solved = True
+                    except: pass
 
         #* HANDLE NAME EDGE CASES
         if self.result.NIK is not None and (self.result.Nama is None or self.result.Nama.strip() == ""):
@@ -464,6 +464,8 @@ class KTPOCR:
         self.result.NIK = word.strip()
 
     def extract_alamat(self, word: str, extra_alamat: str):
+        st.success(word)
+        st.success(extra_alamat)
         try:
             alamat = self.word_to_number_converter(word).replace("Alamat", "")
             alamat_parts = alamat.split("Agama", 1)
@@ -687,9 +689,9 @@ class KTPOCR:
 
         except: self.result.TempatLahir = None
 
-    def master_process(self, information: str):
-        raw_text,threshed = self.process(information)
-        self.extract(raw_text, information)
+    def master_process(self):
+        raw_text,threshed = self.process()
+        self.extract(raw_text)
         return threshed
 
     def to_json(self): return json.dumps(self.result.__dict__, indent=4)
@@ -786,7 +788,7 @@ class KTPOCR:
         self.verifier = Verifier(self.data_kode_wilayah_df)
         self.verifier_maker = self.make_verifier_dict()
 
-        for information in self.informations: threshed = self.master_process(information)
+        threshed = self.master_process()
 
         with col2:
             aspect_ratio = self.original_image.shape[1] / self.original_image.shape[0]
