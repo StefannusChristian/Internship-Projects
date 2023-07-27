@@ -10,6 +10,7 @@ from test_file import Test
 from jaro import jaro_winkler_metric
 from cachetools import cached, TTLCache
 from program_timer import timeit
+from math import ceil
 
 cache = TTLCache(maxsize=100, ttl=86400)
 
@@ -92,7 +93,6 @@ class KTPOCR:
         self.image = None
         self.original_image = None
         self.gray = None
-        self.threshed_value = 127
         self.result = KTPInformation()
         self.image_name = None
         self.image_name_for_test = None
@@ -114,17 +114,35 @@ class KTPOCR:
             "tempat_tanggal_lahir": r'(?:[A-Z][A-Za-z.-]+\s)?(?:\d{2}-\d{2}(?:\s\d{4})?|\d{2}\d{2}(?:\s\d{2,4})?)',
         }
         self.total_ktp_information = 18
-        if is_demo: self.checkbox = st.checkbox("Show All KTP",value=True)
+        if is_demo:
+            st.title("KTP OCR DEMO")
+            self.checkbox = st.checkbox("Show All KTP",value=True)
 
     def set_page_title_and_icon(self, is_demo: bool):
         if is_demo: st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
     def process(self):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
-        th, threshed = cv2.threshold(self.gray, self.threshed_value, 255, cv2.THRESH_TRUNC)
+        edge_cases_images = ["ktp_jelty.png","ktp_benny.png","ktp_galang.png","ktp_haqi.jpg","ktp_mustofa.png","ktp_sulistyono.png","ktp_victor.jpg"]
+        if self.image_name in edge_cases_images: threshed_value = 127
+        else: threshed_value = self.otsu_threshold(self.gray)
+        th, threshed = cv2.threshold(self.gray, threshed_value, 255, cv2.THRESH_TRUNC)
 
         raw_extracted_text = pytesseract.image_to_string((threshed), lang="ind")
         return self.clean_special_characters_text(raw_extracted_text), threshed
+
+    def otsu_threshold(self, image: str):
+        bins_num = 256
+        hist, bin_edges = np.histogram(image, bins=bins_num)
+        bin_mids = (bin_edges[:-1] + bin_edges[1:]) / 2.
+        weight1 = np.cumsum(hist)
+        weight2 = np.cumsum(hist[::-1])[::-1]
+        mean1 = np.cumsum(hist * bin_mids) / weight1
+        mean2 = (np.cumsum((hist * bin_mids)[::-1]) / weight2[::-1])[::-1]
+        inter_class_variance = weight1[:-1] * weight2[1:] * (mean1[:-1] - mean2[1:]) ** 2
+        index_of_max_val = np.argmax(inter_class_variance)
+        threshold = ceil(bin_mids[:-1][index_of_max_val])
+        return threshold
 
     def get_ktp_image_name(self, is_test: bool):
         full_file_name = os.path.split(self.file_path)[-1]
@@ -223,7 +241,9 @@ class KTPOCR:
 
         for idx,word in enumerate(lines):
             info = word.split(" ")[0].strip()
-            if info in self.special_characters: info = word.split(" ")[1].strip()
+            if info in self.special_characters:
+                try: info = word.split(" ")[1].strip()
+                except: pass
 
             if not is_nik_extracted:
                 match = re.search(self.regex_patterns["nik"], word)
@@ -298,8 +318,10 @@ class KTPOCR:
                 if not is_job_solved and (self.result.Pekerjaan is None or self.result.Pekerjaan.strip() == ""):
                     try:
                         pekerjaan = self.clean_semicolons_and_stripes(info)
-                        # st.success(pekerjaan)
-                        # pekerjaan = pekerjaan.split(" ")[0].strip()
+                        split_pekerjaan = pekerjaan.split(" ")
+                        check_kota_kabupaten = " ".join(split_pekerjaan[1:]).strip()
+                        if self.find_string_similarity(self.result.KotaAtauKabupaten,check_kota_kabupaten) >= self.jaro_winkler_threshold: pekerjaan = split_pekerjaan[0].strip()
+
                         best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["jobs"], pekerjaan)
                         if best_match and best_similarity >= self.tricky_case_threshold:
                             self.result.Pekerjaan = best_match.strip()
@@ -338,6 +360,7 @@ class KTPOCR:
                     best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["agama"], info)
                     if best_match and best_similarity >= self.tricky_case_threshold:
                         self.result.Agama = best_match.strip()
+                        self.handle_agama_katholik()
                         is_agama_solved = True
 
                 #* HANDLE RT/RW EDGE CASES
@@ -382,10 +405,11 @@ class KTPOCR:
                     except: pass
 
                 #* HANDLE ALAMAT EDGE CASES
-                if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Kecamatan) < 7)):
-                    if any(substring in info for substring in ["BLOK", "JL","1L","NO"]):
+                if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Alamat) < 7)):
+
+                    if any(substring in info for substring in ["BLOK", "JL","1L","NO","IL"]):
                         alamat = self.clean_semicolons_and_stripes(info)
-                        self.result.Alamat = alamat.strip()
+                        self.result.Alamat = alamat.lstrip(".").strip()
                         is_alamat_solved = True
 
                 #* HANDLE JENIS KELAMIN EDGE CASES
@@ -427,7 +451,21 @@ class KTPOCR:
                         break
                 except: pass
 
+        #* HANDLE NAME EDGE CASES 2
+        if self.result.Nama is not None and self.find_string_similarity("Nama",self.result.Nama) >= self.jaro_winkler_threshold:
+            for idx,word in enumerate(lines):
+                try:
+                    if self.find_string_similarity(self.result.KotaAtauKabupaten, word) >= self.jaro_winkler_threshold:
+                        name = lines[idx+1]
+                        name = self.clean_name(name)
+                        self.result.Nama = name.strip()
+                        break
+                except: pass
+
     def compact(self, lst: list): return list(filter(None, lst))
+
+    def handle_agama_katholik(self):
+        if self.find_string_similarity(self.result.Agama, "KATHOLIK") >= self.jaro_winkler_threshold: self.result.Agama = "KATHOLIK"
 
     def is_valid_date(self, date_str: str):
         try:
@@ -464,18 +502,22 @@ class KTPOCR:
         self.result.NIK = word.strip()
 
     def extract_alamat(self, word: str, extra_alamat: str):
-        st.success(word)
-        st.success(extra_alamat)
+        # st.success(word)
+        # st.success(extra_alamat)
+        if "Alamat" in word: alamat = self.word_to_number_converter(word).replace("Alamat", "")
         try:
-            alamat = self.word_to_number_converter(word).replace("Alamat", "")
+            alamat_typo = word.split(" ")[0].strip()
+            if self.find_string_similarity(alamat_typo,"Alamat") >= self.jaro_winkler_threshold: alamat = self.word_to_number_converter(word).replace(alamat_typo, "")
+        except: pass
+        try:
             alamat_parts = alamat.split("Agama", 1)
             alamat = alamat_parts[0]
             alamat = self.clean_semicolons_and_stripes(alamat).strip()
-            if self.result.Alamat: self.result.Alamat += alamat
-            else: self.result.Alamat = alamat
+            if self.result.Alamat: self.result.Alamat += alamat.lstrip(".").strip()
+            else: self.result.Alamat = alamat.lstrip(".").strip()
             if self.find_string_similarity(extra_alamat.split(" ")[0].strip(), "RT/RW") < self.jaro_winkler_threshold:
                 alamat = self.result.Alamat + " "+extra_alamat
-                self.result.Alamat = alamat.strip()
+                self.result.Alamat = alamat.lstrip(".").strip()
         except: self.result.Alamat = None
 
     def extract_berlaku_hingga(self, word):
@@ -596,7 +638,9 @@ class KTPOCR:
             word = word.replace("Agama","")
             agama = self.clean_semicolons_and_stripes(word).strip()
             best_match, best_similarity = self.find_best_match_from_verifier_pattern(self.verifier_maker["agama"], agama)
-            if best_match and best_similarity >= self.jaro_winkler_threshold: self.result.Agama = best_match.strip()
+            if best_match and best_similarity >= self.jaro_winkler_threshold:
+                self.result.Agama = best_match.strip()
+                self.handle_agama_katholik()
         except: self.result.Agama = None
 
     def find_best_match_from_verifier_pattern(self, pattern_list: list, word: str):

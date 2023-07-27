@@ -582,6 +582,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': 'SEUMUR HIDUP'
             },
+            'supriati': {
+                'provinsi': 'PROVINSI JAWA BARAT',
+                'kota_atau_kabupaten': 'KOTA BANDUNG',
+                'nik': '3273110212980002',
+                'nama': 'SUPRIATI',
+                'tempat_lahir': 'BANDUNG',
+                'tanggal_lahir': '02-12-98',
+                'jenis_kelamin': 'PEREMPUAN',
+                'golongan_darah': '-',
+                'alamat': 'JL. SRIWIJAYA NO. 12',
+                'rt': '001',
+                'rw': '005',
+                'kelurahan_atau_desa': 'ANCOL',
+                'kecamatan': 'REGOL',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'BELUM KAWIN',
+                'pekerjaan': 'WIRASWASTA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': '11-12-2022'
+            },
             'tata': {
                 'provinsi': 'PROVINSI JAWA BARAT',
                 'kota_atau_kabupaten': 'KOTA BANDUNG',
