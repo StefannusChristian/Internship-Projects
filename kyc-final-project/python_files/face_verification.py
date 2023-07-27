@@ -91,6 +91,7 @@ class FaceVerifier:
         except: return None
 
     def verify_face(self, image1, image2):
+        is_error, is_verify = False, False
         if (image1 is not None) and (image2 is not None):
             col1, col2 = st.columns(2)
             image1 = Image.open(image1)
@@ -131,18 +132,25 @@ class FaceVerifier:
                 with col5:
                     if score <= self.face_verification_threshold:
                         st.success("> FACE MATCH! (%.4f <= %.1f)" % (score, self.face_verification_threshold))
+                        is_verify = True
                         st.balloons()
                     else:
                         st.error("> FACE UNMATCH! (%.4f > %.1f)" % (score, self.face_verification_threshold))
+                if not is_verify: st.error("OCR IS NOT RUN BECAUSE FACE IS UNMATCH!")
 
                 with col6: st.info("> Face similarity: %.2f%%" % percent_match)
 
         else:
             col1,col2 = st.columns(2)
             with col1:
-                if (image1 is None): self.gui.show_warning(self.empty_ktp_image_msg)
+                if (image1 is None):
+                    self.gui.show_warning(self.empty_ktp_image_msg)
             with col2:
-                if (image2 is None): self.gui.show_warning(self.empty_image_to_verify_msg)
+                if (image2 is None):
+                    self.gui.show_warning(self.empty_image_to_verify_msg)
+
+            if image1 is None or image2 is None: is_error = True
+        return is_error, is_verify
 
     def run(self):
         col1,col2 = st.columns(2)
@@ -152,5 +160,4 @@ class FaceVerifier:
         else:
             with col2: image2 = st.file_uploader("Upload Image To Verify", type=self.valid_image_extensions, key="image_2_key")
 
-        verify_button = self.gui.make_center_button("Verify")
-        if verify_button: self.verify_face(image1, image2)
+        return image1,image2

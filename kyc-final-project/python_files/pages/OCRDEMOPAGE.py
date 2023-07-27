@@ -1,4 +1,4 @@
 from ocr import KTPOCR
 
-ocr = KTPOCR()
-ocr.run()
+ocr = KTPOCR(True)
+ocr.run_demo(False)

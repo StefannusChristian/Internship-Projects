@@ -79,15 +79,15 @@ class Verifier:
         return self.verifier_dict
 
 class KTPOCR:
-    def __init__(self):
+    def __init__(self, is_demo: bool):
         self.page_title = "KTP OCR DEMO"
-        self.page_icon = "./icon_image.png"
-        self.set_page_title_and_icon()
+        self.page_icon = "../images/other_images/icon_image.png"
+        self.set_page_title_and_icon(is_demo)
         self.hide_side_menu = False
         self.hide_footer = True
         self.hide_styles(self.hide_side_menu,self.hide_footer)
         self.pytesseract_path = r"C:\Users\chris\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
-        self.base_path = "../test_ktp_images/"
+        self.base_path = "../images/test_ktp_images/"
         self.file_path = None
         self.image = None
         self.original_image = None
@@ -120,7 +120,8 @@ class KTPOCR:
         self.total_ktp_information = 18
         self.checkbox = st.checkbox("Show All KTP",value=True)
 
-    def set_page_title_and_icon(self): st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
+    def set_page_title_and_icon(self, is_demo: bool):
+        if is_demo: st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
     def process(self, information: str):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
@@ -586,8 +587,7 @@ class KTPOCR:
             if goldar == "Q" or goldar == "6" or goldar == "0": goldar = "O"
             goldar_match = re.search(self.verifier_maker['goldar'], goldar)
             if goldar_match: self.result.GolonganDarah = goldar_match.group().strip()
-        except:
-            self.result.GolonganDarah = "-"
+        except: self.result.GolonganDarah = "-"
 
     def extract_agama(self, word):
         try:
@@ -764,10 +764,12 @@ class KTPOCR:
     @cached(cache)
     def make_verifier_dict(self): return self.verifier.make_verifier_dict()
 
-    def init(self, show_all_ktp: bool, image_path: str):
+    def init(self, show_all_ktp: bool, image_path: str, is_kyc: bool):
         self.result.reset_values()
-        if show_all_ktp: self.file_path = self.base_path + image_path
-        else: self.file_path = self.base_path + self.choice
+        if not is_kyc:
+            if show_all_ktp: self.file_path = self.base_path + image_path
+            else: self.file_path = self.base_path + self.choice
+        else: self.file_path = self.base_path + image_path.name
 
         self.image = cv2.imread(self.file_path)
         self.original_image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
@@ -794,7 +796,6 @@ class KTPOCR:
             st.image(resized_original_image, use_column_width=True)
             st.image(resized_threshed_image, use_column_width=True)
 
-
         df = self.make_dataframe()
         self.verified,num_correct,self.threshold_num = self.verify_ocr(df)
 
@@ -813,12 +814,16 @@ class KTPOCR:
             average_percentage = df['percentage_match'].mean()
             st.info(f"Average Percentage Match: {average_percentage:.2f}%")
 
-    def run(self):
+    def run_demo(self, is_kyc):
         if self.checkbox:
             for data in self.get_all_files():
-                self.init(True, data)
+                self.init(True, data,is_kyc)
                 self.display_results()
         else:
             self.choice = self.showSelectBox()
-            if self.choice: self.init(False,"")
+            if self.choice: self.init(False,"",is_kyc)
             self.display_results()
+
+    def run(self,ktp_image,is_kyc):
+        self.init(False, ktp_image,is_kyc)
+        self.display_results()

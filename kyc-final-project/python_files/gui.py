@@ -5,9 +5,10 @@
 import streamlit as st
 
 class GUI:
-    def __init__(self):
-        st.image("../other_images/datalabs_logo.png",use_column_width=True)
-        st.title("Know Your Customer Internship Final Project")
+    def show_title(self):
+        col1,col2 = st.columns(2)
+        with col1: st.title("Know Your Customer Internship Final Project")
+        with col2:  st.image("../images/datalabs_logo/datalabs_logo.png",use_column_width=True)
 
     def make_center_button(self, button_text):
         col1, col2, col3 , col4, col5 = st.columns(5)
@@ -15,7 +16,7 @@ class GUI:
         with col2: pass
         with col4: pass
         with col5: pass
-        with col3 : return st.button(button_text)
+        with col3 : return st.button(button_text, use_container_width=True)
 
     # Method to show error message
     def show_error(self,message): return st.error(message)
