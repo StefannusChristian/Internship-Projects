@@ -2,6 +2,26 @@ class Test:
     def __init__(self, ktp_name: str):
         self.ktp_name = ktp_name
         self.test_dict = {
+            'abdurrauf': {
+                'provinsi': 'PROVINSI SULAWESI SELATAN',
+                'kota_atau_kabupaten': 'KABUPATEN SOPPENG',
+                'nik': '7312042510720002',
+                'nama': 'ABDURRAUF, S.Pd, M.Pd',
+                'tempat_lahir': 'CELLENGENGE',
+                'tanggal_lahir': '25-10-1972',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': 'O',
+                'alamat': 'JL. MERDEKA NO.43',
+                'rt': '001',
+                'rw': '004',
+                'kelurahan_atau_desa': 'BILA',
+                'kecamatan': 'LALABATA',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'KAWIN',
+                'pekerjaan': 'PEGAWAI NEGERI SIPIL (PNS)',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
             'adinata': {
                 'provinsi': 'PROVINSI KALIMANTAN BARAT',
                 'kota_atau_kabupaten': 'KOTA PONTIANAK',
@@ -21,6 +41,26 @@ class Test:
                 'pekerjaan': 'PELAJAR/MAHASISWA',
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '29-06-2017'
+                },
+            'amat': {
+                'provinsi': 'PROVINSI JAWA TENGAH',
+                'kota_atau_kabupaten': 'KABUPATEN PEKALONGAN',
+                'nik': '3329091003780012',
+                'nama': 'AMAT FAOZI',
+                'tempat_lahir': 'PEKALONGAN',
+                'tanggal_lahir': '10-03-1978',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': '-',
+                'alamat': 'DUSUN KAUMAN',
+                'rt': '002',
+                'rw': '005',
+                'kelurahan_atau_desa': 'KESESI',
+                'kecamatan': 'KESESI',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'KAWIN',
+                'pekerjaan': 'PEDAGANG',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
                 },
             'arief': {
                 'provinsi': 'PROVINSI JAWA BARAT',
@@ -142,6 +182,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': 'SEUMUR HIDUP'
                 },
+            'fatchur': {
+                'provinsi': 'PROVINSI JAWA TIMUR',
+                'kota_atau_kabupaten': 'KABUPATEN JEMBER',
+                'nik': '3509190102670006',
+                'nama': 'FATCHUR ROCHMAN',
+                'tempat_lahir': 'JEMBER',
+                'tanggal_lahir': '01-02-1967',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': '-',
+                'alamat': 'GRAHA CITRA MAS BLOK I NO 4.LINGK.GUMUK BAGO',
+                'rt': '001',
+                'rw': '021',
+                'kelurahan_atau_desa': 'TEGALBESAR',
+                'kecamatan': 'KALIWATES',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'KAWIN',
+                'pekerjaan': 'PEGAWAI NEGERI SIPIL (PNS)',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
             'febrina':{
                 'provinsi': 'PROVINSI DKI JAKARTA',
                 'kota_atau_kabupaten': 'JAKARTA TIMUR',
@@ -221,6 +281,26 @@ class Test:
                 'pekerjaan': 'PELAJAR/MAHASISWA',
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '24-01-2017'
+                },
+            'gilang': {
+                'provinsi': 'PROVINSI JAWA TENGAH',
+                'kota_atau_kabupaten': 'KABUPATEN BANYUMAS',
+                'nik': '3302101602980003',
+                'nama': 'GILANG RIZQI ABDULLAH',
+                'tempat_lahir': 'BANYUMAS',
+                'tanggal_lahir': '16-02-1998',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': '-',
+                'alamat': 'PEKAJA',
+                'rt': '001',
+                'rw': '001',
+                'kelurahan_atau_desa': 'PEKAJA',
+                'kecamatan': 'KALIBAGOR',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'BELUM KAWIN',
+                'pekerjaan': 'PELAJAR/MAHASISWA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
                 },
             'guohui': {
                 'provinsi': 'PROVINSI JAWA BARAT',
@@ -462,6 +542,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '22-02-2017'
                 },
+            'muhamad': {
+                'provinsi': 'PROVINSI JAWA BARAT',
+                'kota_atau_kabupaten': 'KOTA CIMAHI',
+                'nik': '3217061804840007',
+                'nama': 'MUHAMAD RASYA',
+                'tempat_lahir': 'BANDUNG',
+                'tanggal_lahir': '18-04-1984',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': 'AB',
+                'alamat': 'JL. AMIR MAHMUD Gg SIRNA GALIH No.62',
+                'rt': '005',
+                'rw': '006',
+                'kelurahan_atau_desa': 'CIBABAT',
+                'kecamatan': 'CIMAHI UTARA',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'CERAI HIDUP',
+                'pekerjaan': 'KARYAWAN BUMN',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
             'muhammad': {
                 'provinsi': 'PROVINSI SUMATERA UTARA',
                 'kota_atau_kabupaten': 'KABUPATEN LANGKAT',
@@ -582,6 +682,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': '02-09-2017'
             },
+            'rosmawati': {
+                'provinsi': 'PROVINSI SUMATERA UTARA',
+                'kota_atau_kabupaten': 'KOTA PEMATANGSIANTAR',
+                'nik': '1208281707720003',
+                'nama': 'ROSMAWATI',
+                'tempat_lahir': 'PEMATANGSIANTAR',
+                'tanggal_lahir': '17-07-1972',
+                'jenis_kelamin': 'PEREMPUAN',
+                'golongan_darah': 'O',
+                'alamat': 'JL. SINGOSARI GG. SUMBER SARI',
+                'rt': '000',
+                'rw': '000',
+                'kelurahan_atau_desa': 'BANTAN',
+                'kecamatan': 'SIANTAR BARAT',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'KAWIN',
+                'pekerjaan': 'WIRASWASTA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+            },
             'sarip': {
                 'provinsi': 'PROVINSI DKI JAKARTA',
                 'kota_atau_kabupaten': 'JAKARTA TIMUR',
@@ -599,6 +719,26 @@ class Test:
                 'agama': 'ISLAM',
                 'status_perkawinan': 'KAWIN',
                 'pekerjaan': 'BURUH HARIAN LEPAS',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+            },
+            'sarni': {
+                'provinsi': 'PROVINSI JAWA TIMUR',
+                'kota_atau_kabupaten': 'KABUPATEN BOJONEGORO',
+                'nik': '3522127012590004',
+                'nama': 'SARNI',
+                'tempat_lahir': 'BOJONEGORO',
+                'tanggal_lahir': '30-12-1959',
+                'jenis_kelamin': 'PEREMPUAN',
+                'golongan_darah': '-',
+                'alamat': 'DUSUN BOTOPUTIH',
+                'rt': '010',
+                'rw': '002',
+                'kelurahan_atau_desa': 'TLOGOHAJI',
+                'kecamatan': 'SUMBERREJO',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'KAWIN',
+                'pekerjaan': 'PETANI/PEKEBUN',
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': 'SEUMUR HIDUP'
             },
@@ -762,6 +902,26 @@ class Test:
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': 'SEUMUR HIDUP'
             },
+            'vina': {
+                'provinsi': 'PROVINSI LAMPUNG',
+                'kota_atau_kabupaten': 'KABUPATEN PESAWARAN',
+                'nik': '1809015306970005',
+                'nama': 'VINA AMELIA',
+                'tempat_lahir': 'KESUGIHAN',
+                'tanggal_lahir': '13-06-1997',
+                'jenis_kelamin': 'PEREMPUAN',
+                'golongan_darah': '-',
+                'alamat': 'KESUGIHAN KARANG ANYAR',
+                'rt': '001',
+                'rw': '001',
+                'kelurahan_atau_desa': 'KARANG ANYAR',
+                'kecamatan': 'GEDONG TATAAN',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'BELUM KAWIN',
+                'pekerjaan': 'BELUM/TIDAK BEKERJA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
             'wahyu': {
                 'provinsi': 'PROVINSI JAWA BARAT',
                 'kota_atau_kabupaten': 'KABUPATEN BANDUNG',
@@ -841,7 +1001,27 @@ class Test:
                 'pekerjaan': 'WIRASWASTA',
                 'kewarganegaraan': 'WNI',
                 'berlaku_hingga': 'SEUMUR HIDUP'
-            }
+            },
+            'yopi': {
+                'provinsi': 'PROVINSI LAMPUNG',
+                'kota_atau_kabupaten': 'KOTA METRO',
+                'nik': '1872010602010006',
+                'nama': 'YOPI DHANAN JAYA',
+                'tempat_lahir': 'METRO',
+                'tanggal_lahir': '06-02-2001',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': '-',
+                'alamat': 'JL REFORMASI',
+                'rt': '049',
+                'rw': '008',
+                'kelurahan_atau_desa': 'METRO',
+                'kecamatan': 'METRO PUSAT',
+                'agama': 'ISLAM',
+                'status_perkawinan': 'BELUM KAWIN',
+                'pekerjaan': 'BELUM/TIDAK BEKERJA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
     }
 
     def get_test_values(self, dictionary: dict): return dictionary.values()

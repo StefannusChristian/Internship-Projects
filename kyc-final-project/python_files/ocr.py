@@ -74,7 +74,7 @@ class Verifier:
         self.verifier_dict["goldar"] = self.goldar_pattern
         self.verifier_dict["agama"] = self.agama_pattern
         self.verifier_dict["gender"] = self.gender_pattern
-        self.verifier_dict["jobs"] = ['BELUM/TIDAK BEKERJA', 'MENGURUS RUMAH TANGGA', 'PELAJAR/MAHASISWA', 'PENSIUNAN', 'PEWAGAI NEGERI SIPIL', 'TENTARA NASIONAL INDONESIA', 'KEPOLISISAN RI', 'PERDAGANGAN', 'PETANI/PEKEBUN', 'PETERNAK', 'NELAYAN/PERIKANAN', 'INDUSTRI', 'KONSTRUKSI', 'TRANSPORTASI', 'KARYAWAN SWASTA', 'KARYAWAN BUMN', 'KARYAWAN BUMD', 'KARYAWAN HONORER', 'BURUH HARIAN LEPAS', 'BURUH TANI/PERKEBUNAN', 'BURUH NELAYAN/PERIKANAN', 'BURUH PETERNAKAN', 'PEMBANTU RUMAH TANGGA', 'TUKANG CUKUR', 'TUKANG LISTRIK', 'TUKANG BATU', 'TUKANG KAYU', 'TUKANG SOL SEPATU', 'TUKANG LAS/PANDAI BESI', 'TUKANG JAHIT', 'TUKANG GIGI', 'PENATA RIAS', 'PENATA BUSANA', 'PENATA RAMBUT', 'MEKANIK', 'SENIMAN', 'TABIB', 'PARAJI', 'PERANCANG BUSANA', 'PENTERJEMAH', 'IMAM MASJID', 'PENDETA', 'PASTOR', 'WARTAWAN', 'USTADZ/MUBALIGH', 'JURU MASAK', 'PROMOTOR ACARA', 'ANGGOTA DPR-RI', 'ANGGOTA DPD', 'ANGGOTA BPK', 'PRESIDEN', 'WAKIL PRESIDEN', 'ANGGOTA MAHKAMAH KONSTITUSI', 'ANGGOTA KABINET/KEMENTERIAN', 'DUTA BESAR', 'GUBERNUR', 'WAKIL GUBERNUR', 'BUPATI', 'WAKIL BUPATI', 'WALIKOTA', 'WAKIL WALIKOTA', 'ANGGOTA DPRD PROVINSI', 'ANGGOTA DPRD KABUPATEN/KOTA', 'DOSEN', 'GURU', 'PILOT', 'PENGACARA', 'NOTARIS', 'ARSITEK', 'AKUNTAN', 'KONSULTAN', 'DOKTER', 'BIDAN', 'PERAWAT', 'APOTEKER', 'PSIKIATER/PSIKOLOG', 'PENYIAR TELEVISI', 'PENYIAR RADIO', 'PELAUT', 'PENELITI', 'SOPIR', 'PIALANG', 'PARANORMAL', 'PEDAGANG', 'PERANGKAT DESA', 'KEPALA DESA', 'BIARAWATI', 'WIRASWASTA','PEKERJAAN LAINNYA','PEGAWAI SWASTA','OTHERS']
+        self.verifier_dict["jobs"] = ['BELUM/TIDAK BEKERJA', 'MENGURUS RUMAH TANGGA', 'PELAJAR/MAHASISWA', 'PENSIUNAN', 'PEWAGAI NEGERI SIPIL', 'TENTARA NASIONAL INDONESIA', 'KEPOLISISAN RI', 'PERDAGANGAN', 'PETANI/PEKEBUN', 'PETERNAK', 'NELAYAN/PERIKANAN', 'INDUSTRI', 'KONSTRUKSI', 'TRANSPORTASI', 'KARYAWAN SWASTA', 'KARYAWAN BUMN', 'KARYAWAN BUMD', 'KARYAWAN HONORER', 'BURUH HARIAN LEPAS', 'BURUH TANI/PERKEBUNAN', 'BURUH NELAYAN/PERIKANAN', 'BURUH PETERNAKAN', 'PEMBANTU RUMAH TANGGA', 'TUKANG CUKUR', 'TUKANG LISTRIK', 'TUKANG BATU', 'TUKANG KAYU', 'TUKANG SOL SEPATU', 'TUKANG LAS/PANDAI BESI', 'TUKANG JAHIT', 'TUKANG GIGI', 'PENATA RIAS', 'PENATA BUSANA', 'PENATA RAMBUT', 'MEKANIK', 'SENIMAN', 'TABIB', 'PARAJI', 'PERANCANG BUSANA', 'PENTERJEMAH', 'IMAM MASJID', 'PENDETA', 'PASTOR', 'WARTAWAN', 'USTADZ/MUBALIGH', 'JURU MASAK', 'PROMOTOR ACARA', 'ANGGOTA DPR-RI', 'ANGGOTA DPD', 'ANGGOTA BPK', 'PRESIDEN', 'WAKIL PRESIDEN', 'ANGGOTA MAHKAMAH KONSTITUSI', 'ANGGOTA KABINET/KEMENTERIAN', 'DUTA BESAR', 'GUBERNUR', 'WAKIL GUBERNUR', 'BUPATI', 'WAKIL BUPATI', 'WALIKOTA', 'WAKIL WALIKOTA', 'ANGGOTA DPRD PROVINSI', 'ANGGOTA DPRD KABUPATEN/KOTA', 'DOSEN', 'GURU', 'PILOT', 'PENGACARA', 'NOTARIS', 'ARSITEK', 'AKUNTAN', 'KONSULTAN', 'DOKTER', 'BIDAN', 'PERAWAT', 'APOTEKER', 'PSIKIATER/PSIKOLOG', 'PENYIAR TELEVISI', 'PENYIAR RADIO', 'PELAUT', 'PENELITI', 'SOPIR', 'PIALANG', 'PARANORMAL', 'PEDAGANG', 'PERANGKAT DESA', 'KEPALA DESA', 'BIARAWATI', 'WIRASWASTA','PEKERJAAN LAINNYA','PEGAWAI SWASTA','OTHERS','PEGAWAI NEGERI SIPIL (PNS)']
         self.verifier_dict["status_perkawinan"] = self.status_perkawinan_pattern
         self.verifier_dict["kecamatan"] = self.unique_kecamatan_column
         return self.verifier_dict
@@ -127,8 +127,10 @@ class KTPOCR:
         if self.image_name in edge_cases_images: threshed_value = 127
         elif self.image_name in ["ktp_supriadi.png","ktp_lilly.png"]: threshed_value = 170
         elif self.image_name == "ktp_haqi.jpg": threshed_value = 60
+        elif self.image_name == "ktp_sarni.png": threshed_value = 148
         elif self.image_name == "ktp_muhammad.png": threshed_value = 200
         elif self.image_name == "ktp_luki.png": threshed_value = 77
+        elif self.image_name == "ktp_gilang.jpg": threshed_value = 136
         else: threshed_value = self.otsu_threshold(self.gray)
         th, threshed = cv2.threshold(self.gray, threshed_value, 255, cv2.THRESH_TRUNC)
         raw_extracted_text = pytesseract.image_to_string((threshed), lang="ind")
@@ -410,7 +412,7 @@ class KTPOCR:
                 #* HANDLE ALAMAT EDGE CASES
                 if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Alamat) < 7)):
 
-                    if any(substring in info for substring in ["BLOK", "JL","1L","NO","IL","IX"]):
+                    if any(substring in info for substring in ["BLOK", "JL","1L","NO","IL","IX","DUSUN"]):
                         alamat = self.clean_semicolons_and_stripes(info)
                         self.result.Alamat = alamat.lstrip(".").strip()
                         is_alamat_solved = True
@@ -736,7 +738,6 @@ class KTPOCR:
             tempat_lahir, tanggal_lahir = " ".join(word[:-1]),word[-1]
             tempat_lahir = self.remove_dots(tempat_lahir)
             if not self.isalpha_withspaces(tempat_lahir) or len(tempat_lahir) < 3:
-                st.success("MASUK SINI")
                 for i in range (len(word)-1,-1,-1):
                     if word[i].isalpha():
                         tempat_lahir = word[i]
@@ -747,7 +748,6 @@ class KTPOCR:
             tempat_lahir = self.remove_all_digits(tempat_lahir)
             try: tanggal_lahir = self.remove_all_letters(tanggal_lahir)
             except: pass
-            st.success(tempat_lahir)
             self.result.TanggalLahir = tanggal_lahir.strip()
             self.result.TempatLahir = tempat_lahir.strip()
 
