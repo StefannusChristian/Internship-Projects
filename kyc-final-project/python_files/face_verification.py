@@ -14,7 +14,7 @@ class FaceVerifier:
     #########################################################
     #                    Constructor                         #m
     #########################################################
-    def __init__(self):
+    def __init__(self, is_demo: bool):
         self.face_not_found_error_msg = "Face Not Detected! Please Upload Another Image With A Clear Face!"
         self.empty_image_msg = "Please Upload An Image!"
         self.empty_ktp_image_msg = "Please Upload KTP Image!"
@@ -23,7 +23,8 @@ class FaceVerifier:
         self.face_verification_threshold = 0.5
         self.gui = GUI()
         self.valid_image_extensions = ["jpg", "jpeg", "png"]
-        self.checkbox = st.checkbox("Stop Camera Input")
+        if not is_demo: self.checkbox = st.checkbox("Stop Camera Input")
+        else: st.title("Face Verification Demo")
 
         # Initialize the MTCNN face detection model
         self.face_detector = MTCNN()
@@ -103,8 +104,8 @@ class FaceVerifier:
             detected_face_1 = self.extract_face(image1)
             detected_face_2 = self.extract_face(image2)
 
-            if detected_face_1 is None: self.show_error_in_face_verification(True)
-            if detected_face_2 is None: self.show_error_in_face_verification(False)
+            if detected_face_1 is None: self.gui.show_error_in_face_verification(True)
+            if detected_face_2 is None: self.gui.show_error_in_face_verification(False)
 
             faces = [detected_face_1, detected_face_2]
             if all(face is not None for face in faces):
@@ -161,3 +162,6 @@ class FaceVerifier:
             with col2: image2 = st.file_uploader("Upload Image To Verify", type=self.valid_image_extensions, key="image_2_key")
 
         return image1,image2
+
+    def run_demo(self):
+        st.success("hai")

@@ -6,7 +6,7 @@ import streamlit as st
 def run_kyc():
     gui = GUI()
     gui.show_title()
-    face_verifier = FaceVerifier()
+    face_verifier = FaceVerifier(False)
     ocr = KTPOCR(False)
     ktp_image, image_to_verify = face_verifier.run()
     verify_button = gui.make_center_button("VERIFY KTP!")

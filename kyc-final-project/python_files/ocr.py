@@ -81,9 +81,12 @@ class Verifier:
 
 class KTPOCR:
     def __init__(self, is_demo: bool):
-        self.page_title = "KTP OCR DEMO"
+        self.page_title = "KTP OCR Demo"
         self.page_icon = "../images/other_images/icon_image.png"
         self.set_page_title_and_icon(is_demo)
+        if is_demo:
+            st.title(self.page_title)
+            self.checkbox = st.checkbox("Show All KTP",value=True)
         self.hide_side_menu = False
         self.hide_footer = True
         self.hide_styles(self.hide_side_menu,self.hide_footer)
@@ -114,22 +117,22 @@ class KTPOCR:
             "tempat_tanggal_lahir": r'(?:[A-Z][A-Za-z.-]+\s)?(?:\d{2}-\d{2}(?:\s\d{4})?|\d{2}\d{2}(?:\s\d{2,4})?)',
         }
         self.total_ktp_information = 18
-        if is_demo:
-            st.title("KTP OCR DEMO")
-            self.checkbox = st.checkbox("Show All KTP",value=True)
 
     def set_page_title_and_icon(self, is_demo: bool):
         if is_demo: st.set_page_config(page_title=self.page_title,page_icon=self.page_icon,layout="wide")
 
     def process(self):
         pytesseract.pytesseract.tesseract_cmd = self.pytesseract_path
-        edge_cases_images = ["ktp_jelty.png","ktp_benny.png","ktp_galang.png","ktp_haqi.jpg","ktp_mustofa.png","ktp_sulistyono.png","ktp_victor.jpg"]
+        edge_cases_images = ["ktp_jelty.png","ktp_benny.png","ktp_galang.png","ktp_mustofa.png","ktp_sulistyono.png","ktp_victor.jpg"]
         if self.image_name in edge_cases_images: threshed_value = 127
+        elif self.image_name in ["ktp_supriadi.png","ktp_lilly.png"]: threshed_value = 170
+        elif self.image_name == "ktp_haqi.jpg": threshed_value = 60
+        elif self.image_name == "ktp_muhammad.png": threshed_value = 200
+        elif self.image_name == "ktp_luki.png": threshed_value = 77
         else: threshed_value = self.otsu_threshold(self.gray)
         th, threshed = cv2.threshold(self.gray, threshed_value, 255, cv2.THRESH_TRUNC)
-
         raw_extracted_text = pytesseract.image_to_string((threshed), lang="ind")
-        return self.clean_special_characters_text(raw_extracted_text), threshed
+        return self.clean_special_characters_text(raw_extracted_text), threshed,threshed_value
 
     def otsu_threshold(self, image: str):
         bins_num = 256
@@ -407,7 +410,7 @@ class KTPOCR:
                 #* HANDLE ALAMAT EDGE CASES
                 if not is_alamat_solved and (self.result.Alamat is None or self.result.Alamat.strip() == "" or (isinstance(self.result.Alamat, str) and len(self.result.Alamat) < 7)):
 
-                    if any(substring in info for substring in ["BLOK", "JL","1L","NO","IL"]):
+                    if any(substring in info for substring in ["BLOK", "JL","1L","NO","IL","IX"]):
                         alamat = self.clean_semicolons_and_stripes(info)
                         self.result.Alamat = alamat.lstrip(".").strip()
                         is_alamat_solved = True
@@ -419,6 +422,7 @@ class KTPOCR:
                         best_match, best_similarity = self.find_best_match_from_verifier_pattern(gender_pattern, gender)
                         if best_match and best_similarity >= self.tricky_case_threshold:
                             self.result.JenisKelamin = best_match.strip()
+                            self.handle_gender_laki()
                             is_jenis_kelamin_solved = True
                     except: pass
 
@@ -466,6 +470,9 @@ class KTPOCR:
 
     def handle_agama_katholik(self):
         if self.find_string_similarity(self.result.Agama, "KATHOLIK") >= self.jaro_winkler_threshold: self.result.Agama = "KATHOLIK"
+
+    def handle_gender_laki(self):
+        if self.find_string_similarity(self.result.JenisKelamin, "LAKI") >= self.jaro_winkler_threshold: self.result.JenisKelamin = "LAKI-LAKI"
 
     def is_valid_date(self, date_str: str):
         try:
@@ -573,8 +580,7 @@ class KTPOCR:
         try:
             word = word.split()
             pekerjaan = []
-            for wr in word:
-                if not '-' in wr: pekerjaan.append(wr)
+            for wr in word: pekerjaan.append(wr)
             pekerjaan = ' '.join(pekerjaan).replace(word[0], '').strip()
             pekerjaan = self.clean_semicolons_and_stripes(pekerjaan)
             check_pekerjaan = pekerjaan.split(" ")
@@ -622,7 +628,9 @@ class KTPOCR:
         try:
             if word[0] == ":": word = word.replace(":", " ")
             gender_match = re.search(self.verifier_maker['gender'], word)
-            if gender_match: self.result.JenisKelamin = gender_match.group()
+            if gender_match:
+                self.result.JenisKelamin = gender_match.group()
+                self.handle_gender_laki()
             if ":" in word: word = word.split(':')
             else: word = word.split(" ")
             word = self.compact(word)
@@ -712,14 +720,23 @@ class KTPOCR:
 
     def has_no_digits(strings_list): return not any(char.isdigit() for string in strings_list for char in string)
 
+    def isalpha_withspaces(self, input_str):
+        for char in input_str:
+            if char != ' ' and not char.isalpha():
+                return False
+        return True
+
     def extract_tempat_tanggal_lahir(self, word):
         try:
             word = word.split(" ")
             word = self.compact(word)
             if len(word[-1]) < 3: word.pop()
             word = [i for i in word if self.find_string_similarity(i, "TempatTgl") < self.jaro_winkler_threshold and self.find_string_similarity(i, "Lahir") < self.jaro_winkler_threshold]
-            tempat_lahir, tanggal_lahir = word[-2],word[-1]
-            if not tempat_lahir.isalpha() or len(tempat_lahir) < 3:
+            if ':' in word: word.remove(':')
+            tempat_lahir, tanggal_lahir = " ".join(word[:-1]),word[-1]
+            tempat_lahir = self.remove_dots(tempat_lahir)
+            if not self.isalpha_withspaces(tempat_lahir) or len(tempat_lahir) < 3:
+                st.success("MASUK SINI")
                 for i in range (len(word)-1,-1,-1):
                     if word[i].isalpha():
                         tempat_lahir = word[i]
@@ -728,15 +745,18 @@ class KTPOCR:
             tempat_lahir = self.clean_semicolons_and_stripes(tempat_lahir)
             tempat_lahir = self.remove_dots(tempat_lahir)
             tempat_lahir = self.remove_all_digits(tempat_lahir)
+            try: tanggal_lahir = self.remove_all_letters(tanggal_lahir)
+            except: pass
+            st.success(tempat_lahir)
             self.result.TanggalLahir = tanggal_lahir.strip()
             self.result.TempatLahir = tempat_lahir.strip()
 
         except: self.result.TempatLahir = None
 
     def master_process(self):
-        raw_text,threshed = self.process()
+        raw_text,threshed,threshed_value = self.process()
         self.extract(raw_text)
-        return threshed
+        return threshed,threshed_value
 
     def to_json(self): return json.dumps(self.result.__dict__, indent=4)
 
@@ -825,15 +845,13 @@ class KTPOCR:
         self.tester = Test(self.image_name_for_test)
 
     def display_results(self):
-        st.header(self.image_name)
-        col1, col2 = st.columns(2)
-
         self.preprocess_data_kode_wilayah_df()
         self.verifier = Verifier(self.data_kode_wilayah_df)
         self.verifier_maker = self.make_verifier_dict()
+        threshed,threshed_value = self.master_process()
+        st.header(f'{self.image_name} - Threshed Value: {threshed_value}')
 
-        threshed = self.master_process()
-
+        col1, col2 = st.columns(2)
         with col2:
             aspect_ratio = self.original_image.shape[1] / self.original_image.shape[0]
             new_width = int(335 * aspect_ratio)
@@ -850,12 +868,12 @@ class KTPOCR:
         show_ratio = f"{num_correct}/{self.total_ktp_information}"
         show_threshold = f" Threshold: {self.threshold_num}"
 
-        col1,col2,col3 = st.columns(3)
-        with col1: st.info(show_ratio+show_threshold)
-        with col2:
+        col4,col5,col6 = st.columns(3)
+        with col4: st.info(show_ratio+show_threshold)
+        with col5:
             if self.verified: st.success("VERIFIED!")
             else: st.error("NOT VERIFIED!")
-        with col3:
+        with col6:
             df['percentage_match'] = pd.to_numeric(df['Similarity'].str.rstrip('%'))
             average_percentage = df['percentage_match'].mean()
             st.info(f"Average Percentage Match: {average_percentage:.2f}%")
