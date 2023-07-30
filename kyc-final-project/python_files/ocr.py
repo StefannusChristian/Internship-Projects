@@ -131,6 +131,7 @@ class KTPOCR:
         elif self.image_name == "ktp_muhammad.png": threshed_value = 200
         elif self.image_name == "ktp_luki.png": threshed_value = 77
         elif self.image_name == "ktp_gilang.jpg": threshed_value = 136
+        elif self.image_name == "ktp_vina.png": threshed_value = 148
         else: threshed_value = self.otsu_threshold(self.gray)
         th, threshed = cv2.threshold(self.gray, threshed_value, 255, cv2.THRESH_TRUNC)
         raw_extracted_text = pytesseract.image_to_string((threshed), lang="ind")

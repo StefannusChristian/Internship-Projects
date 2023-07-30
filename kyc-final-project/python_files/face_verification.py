@@ -9,6 +9,7 @@ from keras_vggface.utils import preprocess_input  # Preprocessing utility for VG
 from scipy.spatial.distance import cosine  # SciPy for calculating cosine similarity
 from keras_vggface.vggface import VGGFace  # VGGFace model for face recognition
 from gui import GUI
+import os
 
 class FaceVerifier:
     #########################################################
@@ -24,7 +25,10 @@ class FaceVerifier:
         self.gui = GUI()
         self.valid_image_extensions = ["jpg", "jpeg", "png"]
         if not is_demo: self.checkbox = st.checkbox("Stop Camera Input")
-        else: st.title("Face Verification Demo")
+        else:
+            col1,col2 = st.columns(2)
+            with col1: st.title("Face Verification Demo")
+            with col2: st.image("../images/other_images/identity_verification_image.jpeg")
 
         # Initialize the MTCNN face detection model
         self.face_detector = MTCNN()
@@ -91,7 +95,7 @@ class FaceVerifier:
 
         except: return None
 
-    def verify_face(self, image1, image2):
+    def verify_face(self, image1, image2, is_demo: bool):
         is_error, is_verify = False, False
         if (image1 is not None) and (image2 is not None):
             col1, col2 = st.columns(2)
@@ -109,11 +113,16 @@ class FaceVerifier:
 
             faces = [detected_face_1, detected_face_2]
             if all(face is not None for face in faces):
+                subheader1 = "KTP Image"
+                subheader2 = "Image To Verify"
+                if is_demo:
+                    subheader1 = "Image 1"
+                    subheader2 = "Image 2"
                 with col1:
-                    st.subheader("KTP Image")
+                    st.subheader(subheader1)
                     st.image(image1)
                 with col2:
-                    st.subheader("Image To Verify")
+                    st.subheader(subheader2)
                     st.image(image2)
 
                 st.header("Detected Faces")
@@ -134,7 +143,7 @@ class FaceVerifier:
                     if score <= self.face_verification_threshold:
                         st.success("> FACE MATCH! (%.4f <= %.1f)" % (score, self.face_verification_threshold))
                         is_verify = True
-                        st.balloons()
+                        if not is_demo: st.balloons()
                     else:
                         st.error("> FACE UNMATCH! (%.4f > %.1f)" % (score, self.face_verification_threshold))
                 if not is_verify: st.error("OCR IS NOT RUN BECAUSE FACE IS UNMATCH!")
@@ -164,4 +173,11 @@ class FaceVerifier:
         return image1,image2
 
     def run_demo(self):
-        st.success("hai")
+        image_1_path = "../images/image_for_face_verification/image_1_to_compare/"
+        image_2_path = "../images/image_for_face_verification/image_2_to_compare/"
+        image_1_list = os.listdir(image_1_path)[::-1]
+        image_2_list = os.listdir(image_2_path)[::-1]
+        for idx,(img1,img2) in enumerate(zip(image_1_list,image_2_list)):
+            st.header(f"Case {idx+1}")
+            self.verify_face(image_1_path+img1,image_2_path+img2,True)
+            st.divider()

@@ -11,7 +11,7 @@ def run_kyc():
     ktp_image, image_to_verify = face_verifier.run()
     verify_button = gui.make_center_button("VERIFY KTP!")
     if verify_button:
-        is_error,is_verify = face_verifier.verify_face(ktp_image, image_to_verify)
+        is_error,is_verify = face_verifier.verify_face(ktp_image, image_to_verify,False)
         if not is_error and is_verify: ocr.run(ktp_image,True)
 
 if __name__ == "__main__":
