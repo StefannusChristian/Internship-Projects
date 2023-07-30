@@ -146,7 +146,7 @@ class FaceVerifier:
                         if not is_demo: st.balloons()
                     else:
                         st.error("> FACE UNMATCH! (%.4f > %.1f)" % (score, self.face_verification_threshold))
-                if not is_verify: st.error("OCR IS NOT RUN BECAUSE FACE IS UNMATCH!")
+                if not is_verify and not is_demo: st.error("OCR IS NOT RUN BECAUSE FACE IS UNMATCH!")
 
                 with col6: st.info("> Face similarity: %.2f%%" % percent_match)
 
@@ -175,8 +175,8 @@ class FaceVerifier:
     def run_demo(self):
         image_1_path = "../images/image_for_face_verification/image_1_to_compare/"
         image_2_path = "../images/image_for_face_verification/image_2_to_compare/"
-        image_1_list = os.listdir(image_1_path)[::-1]
-        image_2_list = os.listdir(image_2_path)[::-1]
+        image_1_list = os.listdir(image_1_path)
+        image_2_list = os.listdir(image_2_path)
         for idx,(img1,img2) in enumerate(zip(image_1_list,image_2_list)):
             st.header(f"Case {idx+1}")
             self.verify_face(image_1_path+img1,image_2_path+img2,True)
