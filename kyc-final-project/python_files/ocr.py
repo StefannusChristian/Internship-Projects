@@ -61,11 +61,16 @@ class Verifier:
         self.unique_kota_kabupaten_column = dataframe["DaerahTingkatDua"].unique()
         self.unique_kecamatan_column = dataframe["Kecamatan"].unique()
         self.verifier_dict = {}
-        self.jakarta_pattern = ["JAKARTA BARAT","JAKARTA PUSAT","JAKARTA TIMUR","JAKARTA SELATAN","JAKARTA UTARA"]
+        self.jakarta_pattern = [
+            "JAKARTA BARAT","JAKARTA PUSAT","JAKARTA TIMUR","JAKARTA SELATAN","JAKARTA UTARA",
+            'Jakarta Barat', 'Jakarta Pusat', 'Jakarta Timur', 'Jakarta Selatan', 'Jakarta Utara'
+            ]
         self.goldar_pattern = r"AB[-+]?|A[-+]?|B[-+]?|O[-+]?"
-        self.agama_pattern = ["ISLAM","KRISTEN","KATOLIK","BUDHA","HINDU","KONGHUCHU","CHRISTIAN"]
-        self.gender_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE|LAKILAKI|LAKI"
-        self.status_perkawinan_pattern = "BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED"
+        self.agama_pattern = [
+            "ISLAM","KRISTEN","KATOLIK","BUDHA","HINDU","KONGHUCHU","CHRISTIAN",
+            ]
+        self.gender_pattern = "LAKI-LAKI|PEREMPUAN|MALE|FEMALE|LAKILAKI|LAKI|Laki-Laki|Perempuan|Male|Female|LakiLaki|Laki"
+        self.status_perkawinan_pattern = "BELUM KAWIN|KAWIN|CERAI HIDUP|CERAI MATI|MARRIED|Belum Kawin|Kawin|Cerai Hidup|Cerai Mati|Married"
 
     def make_verifier_dict(self):
         self.verifier_dict["provinsi"] = self.unique_pronvisi_column
@@ -129,7 +134,7 @@ class KTPOCR:
         elif self.image_name == "ktp_haqi.jpg": threshed_value = 60
         elif self.image_name == "ktp_sarni.png": threshed_value = 148
         elif self.image_name == "ktp_muhammad.png": threshed_value = 200
-        elif self.image_name == "ktp_luki.png": threshed_value = 77
+        elif self.image_name == "ktp_luki.png": threshed_value = 76
         elif self.image_name == "ktp_gilang.jpg": threshed_value = 136
         elif self.image_name == "ktp_vina.png": threshed_value = 148
         else: threshed_value = self.otsu_threshold(self.gray)
@@ -512,8 +517,7 @@ class KTPOCR:
         self.result.NIK = word.strip()
 
     def extract_alamat(self, word: str, extra_alamat: str):
-        # st.success(word)
-        # st.success(extra_alamat)
+        # st.success("MASUK EXTRACT ALAMAT")
         if "Alamat" in word: alamat = self.word_to_number_converter(word).replace("Alamat", "")
         try:
             alamat_typo = word.split(" ")[0].strip()
@@ -559,14 +563,22 @@ class KTPOCR:
         except: self.result.Kewarganegaraan = None
 
     def extract_kecamatan(self, word):
-        if ":" in word: word = word.split(":")
-        elif "." in word: word = word.split(".")
-        elif "-" in word: word = word.split("-")
-        try: self.result.Kecamatan = word[1].strip()
+        try:
+            if ":" in word: word = word.split(":")
+            elif "." in word: word = word.split(".")
+            elif "-" in word: word = word.split("-")
+            else: word = word.split(" ")
+            # st.success(word)
+            kecamatan = word[1].strip()
+            # st.success(kecamatan)
+            self.result.Kecamatan = kecamatan
         except: self.result.Kecamatan = None
 
     def extract_perkawinan(self,word):
-        try: self.result.StatusPerkawinan = re.search(self.verifier_maker["status_perkawinan"],word)[0]
+        try:
+            status_perkawinan = re.search(self.verifier_maker["status_perkawinan"],word)[0]
+            # st.success(status_perkawinan)
+            self.result.StatusPerkawinan = status_perkawinan.strip()
         except:self.result.StatusPerkawinan = None
 
     def extract_kelurahan_atau_desa(self, word):
@@ -807,7 +819,12 @@ class KTPOCR:
             'NUSA TENGGARA BARAT (NTB)': 'NUSA TENGGARA BARAT',
             'DI YOGYAKARTA': 'DAERAH ISTIMEWA YOGYAKARTA'
         })
+        self.add_kecamatan_to_df()
         self.preprocessed = True
+
+    def add_kecamatan_to_df(self):
+        additional_kecamatan = ["KEBAYORAN BARU","KALIWATES"]
+        for kecamatan in additional_kecamatan: self.data_kode_wilayah_df['Kecamatan'] = pd.Series([kecamatan] + self.data_kode_wilayah_df['Kecamatan'].to_list())
 
     def hide_styles(self, hide_main_menu: bool, hide_footer: bool):
         style_string = ""
@@ -881,7 +898,9 @@ class KTPOCR:
 
     def run_demo(self, is_kyc):
         if self.checkbox:
-            for data in self.get_all_files():
+            idx = 0
+            all_ktp_files = self.get_all_files()
+            for data in all_ktp_files[idx:]:
                 self.init(True, data,is_kyc)
                 self.display_results()
         else:

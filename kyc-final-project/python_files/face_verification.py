@@ -10,6 +10,9 @@ from scipy.spatial.distance import cosine  # SciPy for calculating cosine simila
 from keras_vggface.vggface import VGGFace  # VGGFace model for face recognition
 from gui import GUI
 import os
+from keras.models import load_model
+import cv2
+import numpy as np
 
 class FaceVerifier:
     #########################################################
@@ -21,9 +24,12 @@ class FaceVerifier:
         self.empty_ktp_image_msg = "Please Upload KTP Image!"
         self.empty_image_to_verify_msg = "Please Upload Image To Verify!"
         self.empty_ktp_file = "Please Upload Your KTP As Image!"
+        self.invalid_ktp_msg = "Please Upload A Valid KTP Image!"
         self.face_verification_threshold = 0.5
         self.gui = GUI()
         self.valid_image_extensions = ["jpg", "jpeg", "png"]
+        self.pretrained_ktp_classifier_model = "../ktp classifier.h5/"
+        self.loaded_model = load_model(self.pretrained_ktp_classifier_model)
         if not is_demo: self.checkbox = st.checkbox("Stop Camera Input")
         else:
             col1,col2 = st.columns(2)
@@ -32,7 +38,7 @@ class FaceVerifier:
 
         # Initialize the MTCNN face detection model
         self.face_detector = MTCNN()
-        self.base_ktp_image_local_path = "database/ktp/"
+        self.base_ktp_image_local_path = "../ktp_classification/ktp_images/all_images/"
 
     def fix_image_orientation(self, image):
         if hasattr(image, '_getexif'):
@@ -95,7 +101,7 @@ class FaceVerifier:
 
         except: return None
 
-    def verify_face(self, image1, image2, is_demo: bool):
+    def verify_face(self, image1, image2, is_demo: bool, invalid_ktp: bool):
         is_error, is_verify = False, False
         if (image1 is not None) and (image2 is not None):
             col1, col2 = st.columns(2)
@@ -112,7 +118,7 @@ class FaceVerifier:
             if detected_face_2 is None: self.gui.show_error_in_face_verification(False)
 
             faces = [detected_face_1, detected_face_2]
-            if all(face is not None for face in faces):
+            if all(face is not None for face in faces) and not invalid_ktp:
                 subheader1 = "KTP Image"
                 subheader2 = "Image To Verify"
                 if is_demo:
@@ -153,24 +159,49 @@ class FaceVerifier:
         else:
             col1,col2 = st.columns(2)
             with col1:
-                if (image1 is None):
+                if invalid_ktp:
+                    self.gui.show_warning(self.invalid_ktp_msg)
+                elif image1 is None:
                     self.gui.show_warning(self.empty_ktp_image_msg)
-            with col2:
-                if (image2 is None):
-                    self.gui.show_warning(self.empty_image_to_verify_msg)
 
+            with col2: self.gui.show_warning(self.empty_image_to_verify_msg)
             if image1 is None or image2 is None: is_error = True
         return is_error, is_verify
 
+    def preprocess_image(self, image_path):
+        image = cv2.imread(image_path)
+        image = cv2.resize(image, (32, 32))
+        image = image / 255.0
+        image = np.expand_dims(image, axis=0)
+        return image
+
+    def is_image_ktp(self, test_image_path):
+        image_to_test = self.preprocess_image(test_image_path)
+        predicted_probabilities = self.loaded_model.predict(image_to_test)
+        predicted_class = np.argmax(predicted_probabilities)
+        threshold = 0.5
+        predicted_class = 1 if predicted_probabilities[0, 0] > threshold else 0
+        return True if predicted_class is 1 else False
+
     def run(self):
+        invalid_ktp = False
         col1,col2 = st.columns(2)
-        with col1: image1 = st.file_uploader("Upload KTP Image", type=self.valid_image_extensions, key="image_1_key")
+        with col1:
+            image1 = st.file_uploader("Upload KTP Image", type=self.valid_image_extensions, key="image_1_key")
+            if image1 is not None:
+                image_full_path = self.base_ktp_image_local_path+image1.name
+                is_image_1_ktp = self.is_image_ktp(image_full_path)
+                if not is_image_1_ktp:
+                    self.gui.show_error(self.invalid_ktp_msg)
+                    invalid_ktp = True
+                else: self.gui.show_success("KTP Is Valid!")
+
         if not self.checkbox:
             with col2: image2 = st.camera_input("Take A Picture")
         else:
             with col2: image2 = st.file_uploader("Upload Image To Verify", type=self.valid_image_extensions, key="image_2_key")
 
-        return image1,image2
+        return image1,image2,invalid_ktp
 
     def run_demo(self):
         image_1_path = "../images/image_for_face_verification/image_1_to_compare/"
@@ -179,5 +210,5 @@ class FaceVerifier:
         image_2_list = os.listdir(image_2_path)
         for idx,(img1,img2) in enumerate(zip(image_1_list,image_2_list)):
             st.header(f"Case {idx+1}")
-            self.verify_face(image_1_path+img1,image_2_path+img2,True)
+            self.verify_face(image_1_path+img1,image_2_path+img2,True,True)
             st.divider()

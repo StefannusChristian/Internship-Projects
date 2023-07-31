@@ -8,10 +8,10 @@ def run_kyc():
     gui.show_title()
     face_verifier = FaceVerifier(False)
     ocr = KTPOCR(False)
-    ktp_image, image_to_verify = face_verifier.run()
+    ktp_image, image_to_verify, invalid_ktp = face_verifier.run()
     verify_button = gui.make_center_button("VERIFY KTP!")
     if verify_button:
-        is_error,is_verify = face_verifier.verify_face(ktp_image, image_to_verify,False)
+        is_error,is_verify = face_verifier.verify_face(ktp_image, image_to_verify,False, invalid_ktp)
         if not is_error and is_verify: ocr.run(ktp_image,True)
 
 if __name__ == "__main__":
