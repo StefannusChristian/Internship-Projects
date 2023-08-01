@@ -210,5 +210,5 @@ class FaceVerifier:
         image_2_list = os.listdir(image_2_path)
         for idx,(img1,img2) in enumerate(zip(image_1_list,image_2_list)):
             st.header(f"Case {idx+1}")
-            self.verify_face(image_1_path+img1,image_2_path+img2,True,True)
+            self.verify_face(image_1_path+img1,image_2_path+img2,True,False)
             st.divider()

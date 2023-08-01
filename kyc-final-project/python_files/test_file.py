@@ -2,6 +2,26 @@ class Test:
     def __init__(self, ktp_name: str):
         self.ktp_name = ktp_name
         self.test_dict = {
+            'ariel': {
+                'provinsi': 'PROVINSI JAWA BARAT',
+                'kota_atau_kabupaten': 'KOTA BOGOR',
+                'nik': '3271022106990002',
+                'nama': 'ARIEL TANDIAPA',
+                'tempat_lahir': 'BOGOR',
+                'tanggal_lahir': '21-06-1999',
+                'jenis_kelamin': 'LAKI-LAKI',
+                'golongan_darah': 'O',
+                'alamat': 'PULO ARMIN NO.27',
+                'rt': '006',
+                'rw': '004',
+                'kelurahan_atau_desa': 'BARANANGSIANG',
+                'kecamatan': 'BOGOR TIMUR',
+                'agama': 'KRISTEN',
+                'status_perkawinan': 'BELUM KAWIN',
+                'pekerjaan': 'PELAJAR/MAHASISWA',
+                'kewarganegaraan': 'WNI',
+                'berlaku_hingga': 'SEUMUR HIDUP'
+                },
             'abdurrauf': {
                 'provinsi': 'PROVINSI SULAWESI SELATAN',
                 'kota_atau_kabupaten': 'KABUPATEN SOPPENG',

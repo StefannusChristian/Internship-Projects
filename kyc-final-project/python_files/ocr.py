@@ -137,6 +137,7 @@ class KTPOCR:
         elif self.image_name == "ktp_luki.png": threshed_value = 76
         elif self.image_name == "ktp_gilang.jpg": threshed_value = 136
         elif self.image_name == "ktp_vina.png": threshed_value = 148
+        elif self.image_name == "ktp_ariel.jpg": threshed_value = 70
         else: threshed_value = self.otsu_threshold(self.gray)
         th, threshed = cv2.threshold(self.gray, threshed_value, 255, cv2.THRESH_TRUNC)
         raw_extracted_text = pytesseract.image_to_string((threshed), lang="ind")
@@ -790,7 +791,7 @@ class KTPOCR:
         df['Should Return'] = df['Should Return'].astype(str)
         df['Check'] = np.where(df.apply(lambda row: self.find_string_similarity(row['Value'], row['Should Return']) >= self.jaro_winkler_threshold, axis=1), '✅', '❌')
         df['Similarity'] = df.apply(lambda row: f"{self.find_string_similarity(row['Value'], row['Should Return']) * 100:.0f}%", axis=1)
-        return df
+        return df, json_object
 
     def verify_ocr(self, df: pd.DataFrame):
         threshold = int(self.ocr_threshold*self.total_ktp_information)
@@ -878,7 +879,7 @@ class KTPOCR:
             st.image(resized_original_image, use_column_width=True)
             st.image(resized_threshed_image, use_column_width=True)
 
-        df = self.make_dataframe()
+        df, extracted_ktp_record = self.make_dataframe()
         self.verified,num_correct,self.threshold_num = self.verify_ocr(df)
 
         with col1: st.dataframe(df,use_container_width=True,height=670)
@@ -896,6 +897,8 @@ class KTPOCR:
             average_percentage = df['percentage_match'].mean()
             st.info(f"Average Percentage Match: {average_percentage:.2f}%")
 
+        return df, extracted_ktp_record
+
     def run_demo(self, is_kyc):
         if self.checkbox:
             idx = 0
@@ -910,4 +913,5 @@ class KTPOCR:
 
     def run(self,ktp_image,is_kyc):
         self.init(False, ktp_image,is_kyc)
-        self.display_results()
+        df, extracted_ktp_record = self.display_results()
+        return df, extracted_ktp_record
